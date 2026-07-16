@@ -2,6 +2,19 @@ import React, { useState } from 'react';
 import { Bot, Sparkles, Send, Edit3, Settings2, Play, CheckCircle2, Layers } from 'lucide-react';
 import { generateEntryLogic, generateFeedback } from './lib/gemini';
 
+const getCategoryColor = (category) => {
+  const colors = {
+    '시작': '#00B686',
+    '흐름': '#1DBAEC',
+    '판단': '#4068FF',
+    '움직임': '#A359FF',
+    '자료': '#E54C8B',
+    '인공지능': '#7A52FF',
+    '하드웨어': '#00B6B1'
+  };
+  return colors[category] || '#7A52FF';
+};
+
 function App() {
   const [keyword, setKeyword] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -115,26 +128,31 @@ function App() {
 
         {result && !isGenerating && (
           <section className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2">
-              <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-2">
+              <h2 className="text-xl md:text-2xl font-bold text-slate-800 flex flex-wrap items-center gap-1.5 leading-snug">
                 <span className="text-[#76b900] drop-shadow-sm">"{result.title}"</span> 추천 알고리즘 🚀
               </h2>
               
               {/* Level Selector */}
-              <div className="flex bg-slate-100 p-1.5 rounded-2xl w-full md:w-auto shadow-inner border border-slate-200">
-                {Object.entries(result.levels).map(([key, level]) => (
-                  <button
-                    key={key}
-                    onClick={() => setActiveLevel(key)}
-                    className={`flex-1 md:flex-none px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
-                      activeLevel === key 
-                        ? 'bg-white text-[#76b900] shadow-md border border-slate-100' 
-                        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
-                    }`}
-                  >
-                    {level.name}
-                  </button>
-                ))}
+              <div className="flex bg-slate-100 p-1 rounded-2xl w-full lg:w-auto shadow-inner border border-slate-200 gap-0.5 shrink-0 overflow-hidden">
+                {Object.entries(result.levels).map(([key, level]) => {
+                  const parts = level.name.split(' ');
+                  const shortName = `${parts[0]} ${parts[1]}`;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setActiveLevel(key)}
+                      className={`flex-1 lg:flex-none px-3 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 ${
+                        activeLevel === key 
+                          ? 'bg-white text-[#76b900] shadow-md border border-slate-100' 
+                          : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                      }`}
+                    >
+                      <span className="hidden sm:inline">{level.name}</span>
+                      <span className="inline sm:hidden">{shortName}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
             
@@ -145,19 +163,27 @@ function App() {
                   <Layers className="w-5 h-5 text-indigo-500" />
                   엔트리 블록 조립 순서
                 </h3>
-                <div className="space-y-3 flex-1">
+                <div className="space-y-2 flex-1 pb-4">
                   {result.levels[activeLevel].blocks.map((block, idx) => (
                     <div 
                       key={idx} 
-                      className="flex items-center gap-3 animate-in fade-in slide-in-from-left-4"
-                      style={{ animationDelay: `${idx * 80}ms`, fillMode: 'both' }}
+                      className={`entry-block flex items-center px-4 py-3.5 text-white text-sm font-semibold relative animate-in fade-in slide-in-from-left-4 select-none cursor-default ${
+                        idx === 0 ? 'entry-block-start' : ''
+                      }`}
+                      style={{ 
+                        backgroundColor: getCategoryColor(block.category),
+                        animationDelay: `${idx * 80}ms`,
+                        fillMode: 'both',
+                        borderTopLeftRadius: idx === 0 ? '16px' : '6px',
+                        borderTopRightRadius: idx === 0 ? '16px' : '6px',
+                      }}
                     >
-                      <div className={`shrink-0 px-3 py-2 rounded-xl text-white text-xs font-bold shadow-md w-[72px] text-center border border-black/5 ${block.bg}`}>
+                      <span className="bg-black/20 px-2 py-0.5 rounded text-xs font-bold mr-3 shrink-0">
                         {block.category}
-                      </div>
-                      <div className="flex-1 bg-slate-50 border border-slate-200 px-4 py-3 rounded-2xl text-slate-700 font-medium text-sm shadow-sm hover:border-[#76b900]/50 transition-colors cursor-default">
+                      </span>
+                      <span className="flex-1 drop-shadow-sm leading-relaxed">
                         {block.text}
-                      </div>
+                      </span>
                     </div>
                   ))}
                 </div>
