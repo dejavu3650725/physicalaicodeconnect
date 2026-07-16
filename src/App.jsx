@@ -27,6 +27,9 @@ function App() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [viewMode, setViewMode] = useState('block'); // 'block' or 'python'
   const [copied, setCopied] = useState(false);
+  const [showFeedbackBlocks, setShowFeedbackBlocks] = useState(false);
+  const [feedbackCopied, setFeedbackCopied] = useState(false);
+  const [feedbackViewMode, setFeedbackViewMode] = useState('block'); // 'block' or 'python'
 
   const handleGenerate = async () => {
     if (!keyword.trim()) return;
@@ -37,6 +40,7 @@ function App() {
     setUserLogic('');
     setActiveLevel('standard');
     setViewMode('block');
+    setShowFeedbackBlocks(false);
     
     try {
       const generatedResult = await generateEntryLogic(keyword);
@@ -52,6 +56,8 @@ function App() {
     if (!userLogic.trim()) return;
     
     setIsGettingFeedback(true);
+    setFeedback(null);
+    setShowFeedbackBlocks(false);
     
     try {
       const fb = await generateFeedback(keyword, userLogic);
@@ -359,7 +365,115 @@ function App() {
                       <span className="inline-block bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-bold mb-2 text-xs shadow-sm">이렇게 해볼까요? 💡</span>
                       <p className="text-slate-700 font-medium leading-relaxed">{feedback.improvements}</p>
                     </div>
+
+                    {/* View Blocks Button */}
+                    {feedback.blocks && feedback.blocks.length > 0 && (
+                      <div className="pt-2 flex justify-center">
+                        <button
+                          onClick={() => setShowFeedbackBlocks(!showFeedbackBlocks)}
+                          className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 transition-all text-sm md:text-base border border-indigo-500/20"
+                        >
+                          <Layers className="w-5 h-5 shrink-0" />
+                          <span>{showFeedbackBlocks ? '추가된 블록 숨기기' : '🧱 추가된 블록 코딩으로 확인하기'}</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
+
+                  {/* Feedback Blocks Viewer Card */}
+                  {showFeedbackBlocks && feedback.blocks && (
+                    <div className="bg-white rounded-3xl shadow-xl border border-slate-200 p-6 md:p-8 space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-3">
+                        <h4 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                          <Sparkles className="w-5 h-5 text-amber-400" />
+                          아이디어가 더해진 햄스터 로봇 알고리즘 🚀
+                        </h4>
+
+                        {/* View Mode Toggle inside Feedback Card */}
+                        <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 shrink-0">
+                          <button
+                            onClick={() => setFeedbackViewMode('block')}
+                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200 ${
+                              feedbackViewMode === 'block'
+                                ? 'bg-white text-indigo-600 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700'
+                            }`}
+                          >
+                            🧱 블록
+                          </button>
+                          <button
+                            onClick={() => setFeedbackViewMode('python')}
+                            className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200 ${
+                              feedbackViewMode === 'python'
+                                ? 'bg-white text-indigo-600 shadow-sm'
+                                : 'text-slate-500 hover:text-slate-700'
+                            }`}
+                          >
+                            🐍 파이썬
+                          </button>
+                        </div>
+                      </div>
+
+                      {feedbackViewMode === 'block' ? (
+                        <div className="space-y-2 max-w-xl mx-auto pb-4">
+                          {feedback.blocks.map((block, idx) => (
+                            <div 
+                              key={idx} 
+                              className={`entry-block flex items-center px-4 py-3.5 text-white text-sm font-semibold relative animate-in fade-in select-none cursor-default ${
+                                idx === 0 ? 'entry-block-start' : ''
+                              }`}
+                              style={{ 
+                                backgroundColor: getCategoryColor(block.category),
+                                borderTopLeftRadius: idx === 0 ? '16px' : '6px',
+                                borderTopRightRadius: idx === 0 ? '16px' : '6px',
+                              }}
+                            >
+                              <span className="bg-black/20 px-2 py-0.5 rounded text-xs font-bold mr-3 shrink-0">
+                                {block.category}
+                              </span>
+                              <span className="flex-1 drop-shadow-sm leading-relaxed">
+                                {block.text}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col pb-4 max-w-xl mx-auto animate-in fade-in duration-300">
+                          <div className="relative bg-slate-900 rounded-2xl border border-slate-800 p-4 font-mono text-xs md:text-sm text-slate-300 overflow-x-auto shadow-inner min-h-[250px]">
+                            {/* Copy Button */}
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(feedback.pythonCode || '');
+                                setFeedbackCopied(true);
+                                setTimeout(() => setFeedbackCopied(false), 2000);
+                              }}
+                              className="absolute right-3 top-3 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 border border-slate-700 text-slate-300 hover:text-white px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all text-xs z-10"
+                            >
+                              {feedbackCopied ? (
+                                <>
+                                  <Check className="w-3.5 h-3.5 text-[#a3e527]" />
+                                  <span>복사 완료!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3.5 h-3.5" />
+                                  <span>코드 복사</span>
+                                </>
+                              )}
+                            </button>
+                            <pre className="whitespace-pre-wrap leading-relaxed select-text mt-6">
+                              <code>
+                                {feedback.pythonCode || `# 해당 아이디어의 파이썬 코드가 존재하지 않습니다.`}
+                              </code>
+                            </pre>
+                          </div>
+                          <p className="text-xs text-slate-400 mt-2 font-medium">
+                            💡 이 수정된 코드를 복사해서 <strong>엔트리 [파이썬 모드]</strong>에 넣고 <strong>[블록 모드]</strong>로 바꾸면 바뀐 아이디어가 즉시 블록으로 변환됩니다!
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

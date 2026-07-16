@@ -60,24 +60,20 @@ export async function generateEntryLogic(keyword) {
      - 블록: "뒤로 [N] 초 이동하기" ➡️ 파이썬: \`hamster.move_backward_sec(N)\`
      - 블록: "왼쪽으로 [N] 초 돌기" ➡️ 파이썬: \`hamster.turn_left_sec(N)\`
      - 블록: "오른쪽으로 [N] 초 돌기" ➡️ 파이썬: \`hamster.turn_right_sec(N)\`
+     - ...
      - 블록: "정지하기" ➡️ 파이썬: \`hamster.stop()\`
      - 블록: "왼쪽 바퀴 [L] 오른쪽 바퀴 [R] (으)로 정하기" ➡️ 파이썬: \`hamster.wheels(L, R)\`
    - 센서/판단 (조건식):
      - 블록: "<손 찾음?>" ➡️ 파이썬: \`hamster.hand_found()\`
      - 블록: "(왼쪽 근접 센서)" ➡️ 파이썬: \`hamster.left_proximity()\`
-     - 블록: "(오른쪽 근접 센서)" ➡️ 파이썬: \`hamster.right_proximity()\`
-     - 블록: "(왼쪽 바닥 센서)" ➡️ 파이썬: \`hamster.left_floor()\`
-     - 블록: "(오른쪽 바닥 센서)" ➡️ 파이썬: \`hamster.right_floor()\`
+     - ...
    - 소리/버저:
      - 블록: "삐 소리내기" ➡️ 파이썬: \`hamster.beep()\`
      - 블록: "버저 끄기" ➡️ 파이썬: \`hamster.buzzer(0)\`
-     - 블록: "[도] [4] 음을 [0.5] 박자 연주하기" ➡️ 파이썬: \`hamster.note(\"C\", 4, 0.5)\` (계명은 대문자 영어 알파벳)
+     - ...
    - LED:
-     - 블록: "[왼쪽] LED를 [빨간색]으로 정하기" ➡️ 파이썬: \`hamster.left_led(\"red\")\` (방향: left, right, both / 색상: red, yellow, green, blue 등)
+     - 블록: "[왼쪽] LED를 [빨간색]으로 정하기" ➡️ 파이썬: \`hamster.left_led(\"red\")\`
      - 블록: "[양쪽] LED 끄기" ➡️ 파이썬: \`hamster.leds_off()\`
-
-3. 루프(무한루프)는 파이썬에서 \`while True:\`를 사용하고, 인쇄나 대기 시 주석을 잘 달아주세요.
-4. 심화 단계에서는 엔트리의 [인공지능] 블록(예: 비디오 화면 보이기, 사물 인식 시작하기 등)과 햄스터 하드웨어 블록을 융합하는 시나리오를 설계하되, 파이썬 코드에는 비디오 인식 API 등을 \`import entry\`를 활용해 구현하거나, 햄스터봇 제어 중심의 파이썬 논리를 작성해 주세요.
 `;
 
   try {
@@ -118,15 +114,28 @@ export async function generateFeedback(keyword, userLogic) {
   const prompt = `
 당신은 베테랑 초등학교 교사이자 햄스터 로봇 피지컬 컴퓨팅 전문가 '선생님'입니다.
 학생이 진행 중인 프로젝트: "${keyword}"
-학생이 추가하고 싶은 아이디어: "${userLogic}"
+학생이 기존 설계 코드에 추가하고 싶어하는 아이디어: "${userLogic}"
 
-이 학생의 아이디어를 듣고, 햄스터 로봇의 기능(바닥 센서, 근접 센서, LED, 바퀴 모터, 스피커 등)에 빗대어 선생님의 친근하고 유머러스한 말투로 피드백을 주세요.
-반드시 아래 JSON 형식에 맞춰서 응답해야 합니다. 오직 JSON만 반환하세요.
+이 학생의 아이디어를 교육적으로 검토하고, 선생님의 친근하고 유머러스한 말투로 피드백을 주시는 동시에, 이 아이디어가 반영되어 실제로 작동 가능한 **업데이트된 햄스터 로봇 블록코딩 순서와 엔트리 파이썬 코드**를 만들어주세요.
+
+반드시 아래 JSON 형식에 맞춰서 응답해야 합니다. 다른 말 없이 오직 유효한 JSON만 반환하세요.
 
 {
-  "strengths": "학생의 아이디어에서 좋은 점 폭풍 칭찬 (초등학생 눈높이)",
-  "improvements": "더 발전시키면 좋을 점이나 햄스터 로봇으로 구현할 때 주의할 점 제안 (초등학생 눈높이)"
+  "strengths": "학생의 아이디어에서 좋은 점 폭풍 칭찬 (초등학생 눈높이 구어체)",
+  "improvements": "더 발전시키면 좋을 점이나 햄스터 로봇으로 구현할 때 주의할 점 제안 (초등학생 눈높이 구어체)",
+  "blocks": [
+    { "category": "시작", "text": "시작하기 버튼을 클릭했을 때" },
+    { "category": "흐름", "text": "계속 반복하기" },
+    { "category": "판단", "text": "만약 <(왼쪽 바닥 센서) < 20> 이라면" },
+    { "category": "하드웨어", "text": "양쪽 LED 끄기" }
+  ],
+  "pythonCode": "import hamster\n\n# 엔트리 파이썬 코드 구현\n..."
 }
+
+[햄스터 로봇 명령어 가이드 및 파이썬 매핑 규칙]:
+- 블록 카테고리는 반드시 다음 중 하나만 사용하세요: "시작", "흐름", "판단", "움직임", "소리", "자료", "인공지능", "하드웨어".
+- 실질적인 햄스터 로봇 블록코딩 명령어와 매핑되는 파이썬 구문을 작성하세요.
+  (예: hamster.move_forward_sec(1), hamster.left_proximity(), hamster.hand_found(), hamster.beep(), hamster.buzzer(0), hamster.left_led("red"), hamster.leds_off())
 `;
 
   try {
