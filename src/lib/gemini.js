@@ -55,9 +55,9 @@ export async function generateEntryLogic(keyword) {
         contents: [{
           parts: [{ text: prompt }]
         }],
-        generationConfig: {
+        generation_config: {
           temperature: 0.7,
-          responseMimeType: "application/json"
+          response_mime_type: "application/json"
         }
       })
     });
@@ -108,9 +108,9 @@ export async function generateFeedback(keyword, userLogic) {
         contents: [{
           parts: [{ text: prompt }]
         }],
-        generationConfig: {
+        generation_config: {
           temperature: 0.7,
-          responseMimeType: "application/json"
+          response_mime_type: "application/json"
         }
       })
     });

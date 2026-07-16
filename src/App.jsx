@@ -60,7 +60,7 @@ function App() {
               피지컬 AI 코드 커넥트
             </h1>
           </div>
-          <p className="text-slate-500 font-medium mt-1">
+          <p translate="no" className="text-slate-500 font-medium mt-1">
             블록코딩 기반 AI 피지컬 컴퓨팅 융합 수업 코드 제작 도우미
           </p>
         </div>
