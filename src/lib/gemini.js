@@ -1,3 +1,13 @@
+function cleanAndParseJSON(text) {
+  let cleanText = text.trim();
+  // Remove markdown code block fences if present
+  if (cleanText.startsWith('```')) {
+    cleanText = cleanText.replace(/^```(?:json)?\s*/i, '');
+    cleanText = cleanText.replace(/```$/, '');
+  }
+  return JSON.parse(cleanText.trim());
+}
+
 export async function generateEntryLogic(keyword) {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   if (!apiKey) {
@@ -54,11 +64,7 @@ export async function generateEntryLogic(keyword) {
       body: JSON.stringify({
         contents: [{
           parts: [{ text: prompt }]
-        }],
-        generation_config: {
-          temperature: 0.7,
-          response_mime_type: "application/json"
-        }
+        }]
       })
     });
 
@@ -71,7 +77,7 @@ export async function generateEntryLogic(keyword) {
     const data = await response.json();
     const resultText = data.candidates[0].content.parts[0].text;
     
-    return JSON.parse(resultText);
+    return cleanAndParseJSON(resultText);
   } catch (error) {
     console.error('Gemini API Error:', error);
     throw error;
@@ -107,20 +113,19 @@ export async function generateFeedback(keyword, userLogic) {
       body: JSON.stringify({
         contents: [{
           parts: [{ text: prompt }]
-        }],
-        generation_config: {
-          temperature: 0.7,
-          response_mime_type: "application/json"
-        }
+        }]
       })
     });
 
     if (!response.ok) {
-      throw new Error('API 호출 중 오류가 발생했습니다.');
+      const errorText = await response.text();
+      console.error('Gemini API Error Details:', errorText);
+      throw new Error(`API 호출 중 오류가 발생했습니다 (${response.status}): ${errorText}`);
     }
 
     const data = await response.json();
-    return JSON.parse(data.candidates[0].content.parts[0].text);
+    const resultText = data.candidates[0].content.parts[0].text;
+    return cleanAndParseJSON(resultText);
   } catch (error) {
     console.error('Gemini API Error:', error);
     throw error;
