@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Bot, Sparkles, Send, Edit3, Settings2, Play, CheckCircle2, Layers } from 'lucide-react';
+import { Bot, Sparkles, Send, Edit3, Settings2, Play, CheckCircle2, Layers, Copy, Check } from 'lucide-react';
 import { generateEntryLogic, generateFeedback } from './lib/gemini';
 
 const getCategoryColor = (category) => {
@@ -25,6 +25,8 @@ function App() {
   const [isGettingFeedback, setIsGettingFeedback] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [viewMode, setViewMode] = useState('block'); // 'block' or 'python'
+  const [copied, setCopied] = useState(false);
 
   const handleGenerate = async () => {
     if (!keyword.trim()) return;
@@ -34,6 +36,7 @@ function App() {
     setFeedback(null);
     setUserLogic('');
     setActiveLevel('standard');
+    setViewMode('block');
     
     try {
       const generatedResult = await generateEntryLogic(keyword);
@@ -115,6 +118,14 @@ function App() {
               )}
             </button>
           </div>
+          
+          {/* Hardware notice banner */}
+          <div className="mt-6 flex items-start gap-3 bg-blue-50/70 border border-blue-100 rounded-2xl p-4 text-xs md:text-sm text-blue-700 font-medium leading-relaxed">
+            <Sparkles className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+            <p>
+              <strong>[하드웨어 지원 안내]</strong> 현재 버전은 교육 현장에서 가장 활발히 쓰이는 <strong>'햄스터 로봇'</strong>에 최적화된 블록코딩과 엔트리 파이썬 실행 코드를 지원합니다. 아두이노, 알버트, 비트브릭, 코드이노 등 다양한 하드웨어 교구도 순차적으로 업데이트될 예정입니다!
+            </p>
+          </div>
         </section>
 
         {/* 2. AI Algorithm Suggestion Area */}
@@ -159,34 +170,97 @@ function App() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* A. Entry Block Flow */}
               <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-6 flex flex-col hover:shadow-xl transition-shadow">
-                <h3 className="text-lg font-bold text-slate-700 mb-4 flex items-center gap-2 border-b border-slate-100 pb-3">
-                  <Layers className="w-5 h-5 text-indigo-500" />
-                  엔트리 블록 조립 순서
-                </h3>
-                <div className="space-y-2 flex-1 pb-4">
-                  {result.levels[activeLevel].blocks.map((block, idx) => (
-                    <div 
-                      key={idx} 
-                      className={`entry-block flex items-center px-4 py-3.5 text-white text-sm font-semibold relative animate-in fade-in slide-in-from-left-4 select-none cursor-default ${
-                        idx === 0 ? 'entry-block-start' : ''
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                  <h3 className="text-lg font-bold text-slate-700 flex items-center gap-2">
+                    <Layers className="w-5 h-5 text-indigo-500" />
+                    엔트리 코드 흐름
+                  </h3>
+                  
+                  {/* View Mode Toggle */}
+                  <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200 shrink-0">
+                    <button
+                      onClick={() => setViewMode('block')}
+                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200 ${
+                        viewMode === 'block'
+                          ? 'bg-white text-indigo-600 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-700'
                       }`}
-                      style={{ 
-                        backgroundColor: getCategoryColor(block.category),
-                        animationDelay: `${idx * 80}ms`,
-                        fillMode: 'both',
-                        borderTopLeftRadius: idx === 0 ? '16px' : '6px',
-                        borderTopRightRadius: idx === 0 ? '16px' : '6px',
-                      }}
                     >
-                      <span className="bg-black/20 px-2 py-0.5 rounded text-xs font-bold mr-3 shrink-0">
-                        {block.category}
-                      </span>
-                      <span className="flex-1 drop-shadow-sm leading-relaxed">
-                        {block.text}
-                      </span>
-                    </div>
-                  ))}
+                      🧱 블록
+                    </button>
+                    <button
+                      onClick={() => setViewMode('python')}
+                      className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all duration-200 ${
+                        viewMode === 'python'
+                          ? 'bg-white text-indigo-600 shadow-sm'
+                          : 'text-slate-500 hover:text-slate-700'
+                      }`}
+                    >
+                      🐍 파이썬
+                    </button>
+                  </div>
                 </div>
+
+                {viewMode === 'block' ? (
+                  <div className="space-y-2 flex-1 pb-4">
+                    {result.levels[activeLevel].blocks.map((block, idx) => (
+                      <div 
+                        key={idx} 
+                        className={`entry-block flex items-center px-4 py-3.5 text-white text-sm font-semibold relative animate-in fade-in slide-in-from-left-4 select-none cursor-default ${
+                          idx === 0 ? 'entry-block-start' : ''
+                        }`}
+                        style={{ 
+                          backgroundColor: getCategoryColor(block.category),
+                          animationDelay: `${idx * 80}ms`,
+                          fillMode: 'both',
+                          borderTopLeftRadius: idx === 0 ? '16px' : '6px',
+                          borderTopRightRadius: idx === 0 ? '16px' : '6px',
+                        }}
+                      >
+                        <span className="bg-black/20 px-2 py-0.5 rounded text-xs font-bold mr-3 shrink-0">
+                          {block.category}
+                        </span>
+                        <span className="flex-1 drop-shadow-sm leading-relaxed">
+                          {block.text}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex-1 flex flex-col pb-4 animate-in fade-in duration-300">
+                    <div className="relative flex-1 bg-slate-900 rounded-2xl border border-slate-800 p-4 font-mono text-xs md:text-sm text-slate-300 overflow-x-auto shadow-inner min-h-[300px]">
+                      {/* Copy Button */}
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(result.levels[activeLevel].pythonCode || '');
+                          setCopied(true);
+                          setTimeout(() => setCopied(false), 2000);
+                        }}
+                        className="absolute right-3 top-3 bg-slate-800 hover:bg-slate-700 active:bg-slate-900 border border-slate-700 text-slate-300 hover:text-white px-3 py-1.5 rounded-xl font-bold flex items-center gap-1.5 transition-all text-xs z-10"
+                      >
+                        {copied ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-[#a3e527]" />
+                            <span>복사 완료!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5" />
+                            <span>코드 복사</span>
+                          </>
+                        )}
+                      </button>
+                      <pre className="whitespace-pre-wrap leading-relaxed select-text mt-6">
+                        <code>
+                          {result.levels[activeLevel].pythonCode || `# 해당 단계의 파이썬 코드가 존재하지 않습니다.`}
+                        </code>
+                      </pre>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-2 font-medium">
+                      💡 이 코드를 복사해서 <strong>엔트리 [파이썬 모드]</strong>에 붙여넣기 한 뒤 <strong>[블록 모드]</strong>로 바꾸면, 블록이 자동으로 촥 조립된답니다!
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-6">
