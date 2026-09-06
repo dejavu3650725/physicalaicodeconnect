@@ -4,7 +4,7 @@ import { X, Bot } from 'lucide-react';
 const SERVICE = '피지컬 AI 코드 커넥트';
 const OPERATOR = '서울고덕초등학교 금정민';
 const ORG = '서울특별시교육청 AI피지컬컴퓨팅융합교육연구회';
-const EFFECTIVE = '2026년 3월 1일';
+const EFFECTIVE = '2026년 9월 1일';
 
 const TERMS = {
   title: '이용약관',
