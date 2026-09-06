@@ -2,41 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ArrowRight, Cpu, Plug, ShieldCheck, Blocks, Wand2, Sparkles, Route, Users, ClipboardCheck, Compass, Bot } from 'lucide-react';
 import { HARDWARE } from '../data/hardware.js';
 import { href } from '../lib/router.js';
-import { SAMPLES } from '../data/samples.js';
-import { normalizeTree, PLATFORMS } from '../blocks/engine.js';
-import BlockCanvas from '../components/BlockCanvas.jsx';
 import { STAGES, ALGORITHM_PATTERN, ROLES } from '../lib/knowledge.js';
-
-const SHOWCASE = ['hamster', 'microbit', 'spike', 'tory'];
-
-function Showcase() {
-  const [i, setI] = useState(0);
-  useEffect(() => { const t = setInterval(() => setI((x) => (x + 1) % SHOWCASE.length), 4200); return () => clearInterval(t); }, []);
-  const hwId = SHOWCASE[i]; const s = SAMPLES[hwId]; const hw = HARDWARE.find((h) => h.id === hwId);
-  const level = hwId === 'microbit' ? 'standard' : 'advanced';
-  const blocks = normalizeTree(s.platformKey, s.levels[level].blocks, []);
-  return (
-    <div className="relative">
-      <div className="absolute -inset-6 rounded-[36px] opacity-60 blur-2xl" style={{ background: hw.gradient }} />
-      <div className="relative glass-dark rounded-[28px] p-4 shadow-2xl ring">
-        <div className="flex items-center justify-between px-2 pb-3">
-          <div className="flex items-center gap-2 text-sm font-extrabold text-white"><span className="text-xl">{hw.emoji}</span>{hw.name}<span className="text-white/50 font-bold">· {PLATFORMS[s.platformKey].tool}</span></div>
-          <div className="flex gap-1.5">{SHOWCASE.map((k, j) => <button key={k} onClick={() => setI(j)} className={`h-1.5 rounded-full transition-all ${j === i ? 'w-6 bg-lime-300' : 'w-2 bg-white/30'}`} />)}</div>
-        </div>
-        <div key={hwId} className="rounded-2xl overflow-hidden fade-up showcase-canvas">
-          <BlockCanvas platformKey={s.platformKey} blocks={blocks} showCategory={false} />
-        </div>
-        <div className="flex items-center justify-between px-2 pt-3 text-xs text-white/70 font-semibold">
-          <span>“{s.title}” · {level === 'advanced' ? '🔥 심화(AI 융합)' : '🚀 기본(센서·변수)'}</span>
-          <a href={href('/connect', { hw: hwId })} className="text-lime-300 hover:text-lime-200 inline-flex items-center gap-1">이 교구로 설계 <ArrowRight className="w-3.5 h-3.5" /></a>
-        </div>
-      </div>
-      <div className="absolute -left-10 -top-5 float d1 hidden lg:block"><span className="chip bg-[#00b6b1] text-white border-transparent shadow-xl">하드웨어 · 앞으로 1 초 이동하기</span></div>
-      <div className="absolute -right-8 top-[58%] float d2 hidden lg:block"><span className="chip bg-[#8222ff] text-white border-transparent shadow-xl">인공지능 · 1번째 손의 모양이 편 손인가?</span></div>
-      <div className="absolute -left-4 -bottom-5 float hidden lg:block"><span className="chip bg-[#1E90FF] text-white border-transparent shadow-xl">기본 · 아이콘 출력 ♥</span></div>
-    </div>
-  );
-}
 
 const NODE_POS = { hamster: [82, 14], microbit: [82, 38], tory: [82, 62], spike: [82, 86] };
 const HUB = [44, 50]; const IDEA = [8, 50];
@@ -130,7 +96,7 @@ export default function Home() {
         <div className="max-w-2xl"><span className="eyebrow">Hardware</span><h2 className="text-3xl md:text-5xl font-black tracking-tight mt-2">어떤 교구로 수업하나요?</h2><p className="text-slate-500 mt-3 text-lg">교구를 고르면 그 교구에 실제로 있는 블록·센서·출력만 사용해 설계합니다. 없는 기능은 창의적으로 우회합니다.</p></div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-10">
           {HARDWARE.map((h, i) => (
-            <div key={h.id} className="hw-card tilt fade-up" style={{ animationDelay: `${i * 80}ms` }}>
+            <a key={h.id} href={href('/connect', { hw: h.id })} className="hw-card tilt fade-up block group" style={{ animationDelay: `${i * 80}ms` }}>
               <div className="hw-top flex items-end justify-between p-5" style={{ background: h.gradient }}>
                 <span className="hw-emoji">{h.emoji}</span>
                 <span className="chip bg-white/85 border-transparent text-slate-800 relative z-10">{h.tool}</span>
@@ -139,12 +105,9 @@ export default function Home() {
                 <h3 className="font-black text-xl">{h.name}</h3>
                 <p className="text-xs font-bold text-slate-400 mt-0.5">{h.vendor}</p>
                 <p className="text-sm text-slate-600 mt-3 leading-relaxed min-h-[4.5rem]">{h.tagline}</p>
-                <div className="mt-5 flex gap-2">
-                  <a href={href('/connect', { hw: h.id })} className="btn btn-dark !py-2.5 !px-4 text-sm flex-1">설계하기</a>
-                  <a href={href('/tutorial/' + h.tutorial)} className="btn btn-ghost !py-2.5 !px-3.5 text-sm" title="연결 튜토리얼"><Plug className="w-4 h-4" /></a>
-                </div>
+                <div className="mt-5 flex items-center gap-1.5 text-sm font-extrabold text-[#5a8d00] group-hover:gap-2.5 transition-all">이 교구로 코드 커넥트 <ArrowRight className="w-4 h-4" /></div>
               </div>
-            </div>
+            </a>
           ))}
         </div>
       </section>
@@ -169,7 +132,7 @@ export default function Home() {
             <h2 className="text-3xl md:text-5xl font-black tracking-tight mt-2">코드만 뽑는 게 아니라,<br />수업 흐름까지 설계합니다.</h2>
             <p className="text-slate-300 mt-5 text-lg leading-relaxed">서울특별시교육청 피지컬 AI 교육자료의 교수학습 설계 구조(4단계 흐름 · 센서→AI→판단→출력 알고리즘 패턴 · 모둠 역할 · 평가 관점)를 내부 지식으로 심어, 모든 설계 결과에 <b className="text-white">학교자율시간 차시 계획·평가·안전 지도</b>를 함께 제공합니다.</p>
             <div className="mt-6 flex flex-wrap gap-2">{ROLES.map((r) => <span key={r} className="chip glass-dark text-white border-white/15"><Users className="w-3.5 h-3.5" /> {r}</span>)}</div>
-            <a href={href('/guide')} className="btn btn-glass mt-8"><Compass className="w-5 h-5" /> 수업 설계 가이드 보기</a>
+            <a href={href('/guide')} className="mt-8 inline-flex items-center gap-1.5 text-sm font-extrabold text-lime-300 hover:text-lime-200 hover:gap-2.5 transition-all"><Compass className="w-4 h-4" /> 설계 원리 자세히 보기 <ArrowRight className="w-4 h-4" /></a>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             {STAGES.map((s, i) => (
