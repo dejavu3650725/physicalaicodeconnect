@@ -48,10 +48,11 @@ export function pickBestModel(models) {
 const modelGone = (status, text) => status === 404 || (status === 400 && /model|not found|not supported|deprecated/i.test(text));
 
 async function callGemini({ system, prompt, temperature = 0.6, maxOutputTokens = 8192 }) {
+  // thinkingBudget: 0 → Flash 계열의 내부 사고 단계를 끄고 즉시 생성(속도 우선). 거부하는 모델이면 서버/클라이언트가 설정을 빼고 재시도.
   const body = {
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
     systemInstruction: system ? { parts: [{ text: system }] } : undefined,
-    generationConfig: { responseMimeType: 'application/json', temperature, maxOutputTokens },
+    generationConfig: { responseMimeType: 'application/json', temperature, maxOutputTokens, thinkingConfig: { thinkingBudget: 0 } },
     safetySettings: SAFETY_SETTINGS,
   };
   const localKey = getLocalApiKey() || import.meta.env.VITE_GEMINI_API_KEY;
@@ -59,8 +60,9 @@ async function callGemini({ system, prompt, temperature = 0.6, maxOutputTokens =
   if (localKey) {
     // 개인 키 직접 호출 — 모델이 사라졌으면(404) 목록 API로 최신 Flash 모델을 찾아 자동 승계
     const model = getActiveModel();
-    const call = (m) => fetch(`${API}/models/${m}:generateContent?key=${localKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const call = (m, b = body) => fetch(`${API}/models/${m}:generateContent?key=${localKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) });
     res = await call(model); text = await res.text();
+    if (res.status === 400 && /thinking/i.test(text)) { const { thinkingConfig, ...gc } = body.generationConfig; void thinkingConfig; res = await call(model, { ...body, generationConfig: gc }); text = await res.text(); }
     if (!res.ok && modelGone(res.status, text)) {
       try {
         const lr = await fetch(`${API}/models?key=${localKey}&pageSize=200`);
@@ -150,42 +152,69 @@ advanced: ${pick('advanced')}`;
 }
 
 // ---------- 설계 생성 ----------
-export async function designProject({ hardwareId, platformKey, idea, extra }) {
-  const hw = HARDWARE_MAP[hardwareId];
-  const system = systemPrompt(hw, platformKey, { includeAI: true });
-  const prompt = `학생의 프로젝트 아이디어: "${idea}"${extra ? `\n학급 조건: ${extra}` : ''}
+const RESULT_CACHE = 'pacc.resultCache.v1';
+function cacheKey(o) { return JSON.stringify(o); }
+function cacheGet(k) { try { const m = JSON.parse(sessionStorage.getItem(RESULT_CACHE) || '{}'); return m[k] || null; } catch { return null; } }
+function cachePut(k, v) { try { const m = JSON.parse(sessionStorage.getItem(RESULT_CACHE) || '{}'); const keys = Object.keys(m); if (keys.length > 12) delete m[keys[0]]; m[k] = v; sessionStorage.setItem(RESULT_CACHE, JSON.stringify(m)); } catch { /* ignore */ } }
 
-아래 JSON 형식으로만 응답하세요.
+/**
+ * 속도 전략: ① 블록 설계(핵심)와 ② 수업 흐름(lessonPlan)을 **동시에** 요청하고, 핵심이 오면 바로 화면에 보여준다.
+ * onLessonPlan(plan) 은 ②가 도착하면 호출된다(같은 세션에서 같은 입력이면 캐시로 즉시).
+ */
+export async function designProject({ hardwareId, platformKey, idea, extra, onLessonPlan }) {
+  const hw = HARDWARE_MAP[hardwareId];
+  const key = cacheKey({ hardwareId, platformKey, idea, extra });
+  const cached = cacheGet(key);
+  if (cached) { if (onLessonPlan && cached.lessonPlan) queueMicrotask(() => onLessonPlan(cached.lessonPlan)); return { ...cached, fromCache: true }; }
+
+  const system = systemPrompt(hw, platformKey, { includeAI: true });
+  const head = `학생의 프로젝트 아이디어: "${idea}"${extra ? `\n학급 조건: ${extra}` : ''}`;
+  const corePrompt = `${head}
+
+아래 JSON 형식으로만 응답하세요(수업 차시 계획은 별도 요청이므로 여기서는 쓰지 않습니다).
 {
   "title": "프로젝트 제목(재치 있게, 15자 이내)",
   "summary": "이 프로젝트가 무엇을 하는지 한 문장",
   "edgeCase": null 또는 {"wish":"학생이 원한 것","workaround":"실제 부품으로 표현하는 방법"},
   "levels": {
-    "basic":    {"goal":"이 단계에서 배우는 것 한 문장","blocks":[...블록 트리...],"explanation":"선생님 해설(3~5문장, 핵심 용어는 **굵게**)","ctConcepts":["순차","반복"],"tryThis":"학생이 바꿔볼 값/도전 과제 한 문장"},
+    "basic":    {"goal":"이 단계에서 배우는 것 한 문장","blocks":[...블록 트리...],"explanation":"선생님 해설(3~4문장, 핵심 용어는 **굵게**)","ctConcepts":["순차","반복"],"tryThis":"학생이 바꿔볼 값/도전 과제 한 문장"},
     "standard": {...},
     "advanced": {...}
   },
   "variables": [{"name":"변수명","value":30,"desc":"무엇을 조절하는지"}],
-  "realWorld": "이 원리가 쓰이는 실생활 예 한 문장",
-  "lessonPlan": {
-    "stages": [
-      {"key":"tinkering","title":"차시 제목","minutes":40,"activities":["활동1","활동2","활동3"],"teacherTip":"교사 유의점 한 문장"},
-      {"key":"making","title":"...","minutes":80,"activities":[...],"teacherTip":"..."},
-      {"key":"sharing","title":"...","minutes":40,"activities":[...],"teacherTip":"..."},
-      {"key":"improving","title":"...","minutes":40,"activities":[...],"teacherTip":"..."}
-    ],
-    "algorithmFlow": ["① 센서 입력: ...", "② AI 인식: ...", "③ 판단: ...", "④ 출력: ..."],
-    "assessment": ["평가 관점 1(관찰/자기/동료 중 표기)", "..."],
-    "safety": ["안전 지도 1", "..."],
-    "extensions": ["확장 아이디어 1", "..."]
-  }
+  "realWorld": "이 원리가 쓰이는 실생활 예 한 문장"
 }
 # 단계 가이드
 ${levelGuide(hw, platformKey)}
-${fewShot(hw, platformKey)}
-# lessonPlan 은 위 '수업 설계 원리'의 4단계 흐름·알고리즘 패턴·평가 관점을 이 프로젝트에 맞게 구체화한 것이어야 합니다(학교자율시간 4~6차시 기준).`;
-  const raw = await callGemini({ system, prompt, temperature: 0.7, maxOutputTokens: 12000 });
-  return finalize(platformKey, raw, { system, idea });
+${fewShot(hw, platformKey)}`;
+
+  const planPrompt = `${head}
+이 아이디어로 ${hw.name}(${PLATFORMS[platformKey].tool}) 피지컬 AI 융합 수업을 학교자율시간 4~6차시로 설계합니다. 위 '수업 설계 원리'의 4단계 흐름·알고리즘 패턴·평가 관점을 이 프로젝트에 맞게 구체화하세요. 블록 코드는 쓰지 않습니다.
+JSON 형식으로만 응답:
+{
+  "stages": [
+    {"key":"tinkering","title":"차시 제목","minutes":40,"activities":["활동1","활동2","활동3"],"teacherTip":"교사 유의점 한 문장"},
+    {"key":"making","title":"...","minutes":80,"activities":[...],"teacherTip":"..."},
+    {"key":"sharing","title":"...","minutes":40,"activities":[...],"teacherTip":"..."},
+    {"key":"improving","title":"...","minutes":40,"activities":[...],"teacherTip":"..."}
+  ],
+  "algorithmFlow": ["① 센서 입력: ...", "② AI 인식: ...", "③ 판단: ...", "④ 출력: ..."],
+  "assessment": ["평가 관점 1(관찰/자기/동료 중 표기)", "..."],
+  "safety": ["안전 지도 1", "..."],
+  "extensions": ["확장 아이디어 1", "..."]
+}`;
+
+  // 수업 흐름은 카탈로그가 필요 없어 짧은 시스템 프롬프트로 병렬 요청
+  const planSystem = `당신은 서울특별시교육청 AI피지컬컴퓨팅융합교육연구회의 베테랑 초등 교사입니다. 초등 눈높이의 구체적인 활동으로 씁니다.\n${designPrinciples(hw.id)}`;
+  const planPromise = callGemini({ system: planSystem, prompt: planPrompt, temperature: 0.6, maxOutputTokens: 3000 })
+    .then((plan) => { if (onLessonPlan) onLessonPlan(plan); return plan; })
+    .catch((e) => { console.warn('수업 흐름 생성 실패', e); return null; });
+
+  const raw = await callGemini({ system, prompt: corePrompt, temperature: 0.7, maxOutputTokens: 9000 });
+  const result = await finalize(platformKey, raw, { system, idea });
+  // 캐시는 수업 흐름까지 도착한 뒤 저장(백그라운드)
+  planPromise.then((plan) => { if (plan) cachePut(key, { ...result, lessonPlan: plan }); });
+  return result;
 }
 
 async function finalize(platformKey, raw, ctx) {
@@ -206,12 +235,14 @@ async function finalize(platformKey, raw, ctx) {
       const reasons = [];
       if (unknown.length) reasons.push(`- 카탈로그에 없는 블록 사용: ${[...new Set(unknown.map((u) => u.type))].join(', ')} → 카탈로그의 블록으로 대체`);
       if (!check.ok) reasons.push(describeViolations(check));
+      const badLevels = ['basic', 'standard', 'advanced'].filter((k) => !check[k].ok || unknown.some((u) => u.level === k));
       const fixPrompt = `이전 설계를 검사한 결과 다음 문제가 있습니다:
 ${reasons.join('\n')}
 
-프로젝트 "${ctx.idea}"의 세 단계(basic/standard/advanced) blocks 를 위 문제를 모두 해결하도록 다시 작성하세요. 문제가 없는 단계는 그대로 두어도 됩니다. goal/explanation/ctConcepts/tryThis 는 바뀐 블록에 맞게 다듬고, 나머지 필드(title, summary, lessonPlan 등)는 동일하게 유지하세요.
-이전 설계(참고):\n${JSON.stringify(raw).slice(0, 7000)}\n같은 JSON 형식으로만 응답하세요.`;
-      const fixed = await callGemini({ system: ctx.system, prompt: fixPrompt, temperature: 0.4, maxOutputTokens: 12000 });
+프로젝트 "${ctx.idea}"에서 문제가 있는 단계 [${badLevels.join(', ')}] 만 다시 작성하세요(다른 단계는 유지됩니다). 각 단계는 {"goal","blocks","explanation","ctConcepts","tryThis"} 를 포함합니다.
+현재 설계(참고):\n${JSON.stringify({ levels: Object.fromEntries(['basic', 'standard', 'advanced'].map((k) => [k, { blocks: raw.levels?.[k]?.blocks }])) }).slice(0, 6000)}
+JSON 형식으로만 응답: {"levels":{${badLevels.map((k) => `"${k}":{...}`).join(',')}}}`;
+      const fixed = await callGemini({ system: ctx.system, prompt: fixPrompt, temperature: 0.4, maxOutputTokens: 6000 });
       const cand = { ...result.levels };
       for (const key of ['basic', 'standard', 'advanced']) {
         const lv = fixed.levels?.[key];

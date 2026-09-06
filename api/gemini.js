@@ -52,13 +52,21 @@ export default async function handler(req, res) {
   try {
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
     const requested = (body.model && /^[a-z0-9.\-]+$/i.test(body.model)) ? body.model : DEFAULT_MODEL;
-    const payload = JSON.stringify({ contents: body.contents, generationConfig: body.generationConfig, safetySettings: body.safetySettings, systemInstruction: body.systemInstruction });
+    const mk = (gc) => JSON.stringify({ contents: body.contents, generationConfig: gc, safetySettings: body.safetySettings, systemInstruction: body.systemInstruction });
+    let payload = mk(body.generationConfig);
     const call = (model) => fetch(`${API}/models/${model}:generateContent?key=${apiKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: payload });
 
     // 이미 승계된 모델이 캐시되어 있으면 그것을 먼저 사용
     const first = (resolvedModel && Date.now() - resolvedAt < CACHE_MS) ? resolvedModel : requested;
     let r = await call(first);
     let text = await r.text();
+
+    // 속도용 thinkingConfig 를 모델이 거부하면(400) 설정을 빼고 1회 재시도
+    if (r.status === 400 && /thinking/i.test(text) && body.generationConfig?.thinkingConfig) {
+      const { thinkingConfig, ...rest } = body.generationConfig; void thinkingConfig;
+      payload = mk(rest);
+      r = await call(first); text = await r.text();
+    }
 
     if (!r.ok && looksLikeModelGone(r.status, text)) {
       const best = pickBestModel(await listModels(apiKey));

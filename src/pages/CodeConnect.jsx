@@ -34,14 +34,21 @@ export default function CodeConnect({ route }) {
   useEffect(() => { if (route.query.hw && HARDWARE_MAP[route.query.hw]) setHwId(route.query.hw); if (route.query.idea) setIdea(route.query.idea); }, [route.query.hw, route.query.idea]);
   const templates = useMemo(() => TEMPLATES[hwId] || [], [hwId]);
 
+  const reqId = useRef(0);
   const generate = async () => {
     if (!idea.trim()) return;
+    const id = ++reqId.current;
     setBusy(true); setError(''); setResult(null);
     try {
-      const r = await designProject({ hardwareId: hwId, platformKey, idea: idea.trim(), extra });
-      setResult({ ...r, platformKey, hwId, idea: idea.trim() });
-    } catch (e) { setError(e.message || String(e)); }
-    finally { setBusy(false); }
+      // 블록 설계가 도착하면 즉시 표시, 수업 흐름은 병렬로 받아 뒤에 채운다
+      const r = await designProject({
+        hardwareId: hwId, platformKey, idea: idea.trim(), extra,
+        onLessonPlan: (plan) => { if (reqId.current === id) setResult((cur) => (cur ? { ...cur, lessonPlan: plan, planPending: false } : cur)); },
+      });
+      if (reqId.current !== id) return;
+      setResult({ ...r, platformKey, hwId, idea: idea.trim(), planPending: !r.lessonPlan });
+    } catch (e) { if (reqId.current === id) setError(e.message || String(e)); }
+    finally { if (reqId.current === id) setBusy(false); }
   };
 
   const showSample = () => {
@@ -79,7 +86,7 @@ export default function CodeConnect({ route }) {
     setPlatformKey(other.key);
     if (result.sample) return;
     setBusy(true);
-    try { const r = await designProject({ hardwareId: hwId, platformKey: other.key, idea: result.idea, extra }); setResult({ ...r, platformKey: other.key, hwId, idea: result.idea }); }
+    try { const r = await designProject({ hardwareId: hwId, platformKey: other.key, idea: result.idea, extra, onLessonPlan: (plan) => setResult((cur) => (cur ? { ...cur, lessonPlan: plan, planPending: false } : cur)) }); setResult({ ...r, platformKey: other.key, hwId, idea: result.idea, planPending: !r.lessonPlan }); }
     catch (e) { setError(e.message || String(e)); } finally { setBusy(false); }
   };
 

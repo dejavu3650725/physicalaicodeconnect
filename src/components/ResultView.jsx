@@ -169,7 +169,7 @@ export default function ResultView({ hardware, platformKey, result, onFeedback, 
       </div>
 
       {/* 수업 흐름 — 교육청 피지컬 AI 설계 원리 기반 */}
-      <LessonPlan hardware={hardware} level={level} plan={result.lessonPlan} />
+      <LessonPlan hardware={hardware} level={level} plan={result.lessonPlan} pending={result.planPending} />
 
       {/* 피드백 */}
       {onFeedback && (
@@ -211,7 +211,7 @@ export default function ResultView({ hardware, platformKey, result, onFeedback, 
 }
 
 
-function LessonPlan({ hardware, level, plan }) {
+function LessonPlan({ hardware, level, plan, pending }) {
   const hints = hintsFor(hardware.id);
   const warm = warmupFor(hardware.id, level);
   const stages = (plan?.stages?.length ? plan.stages : STAGES.map((s) => ({ key: s.key, title: s.name, minutes: s.key === 'making' ? 80 : 40, activities: [s.desc], teacherTip: '' }))).map((st) => ({ ...st, meta: STAGES.find((x) => x.key === st.key) || STAGES[1] }));
@@ -223,6 +223,7 @@ function LessonPlan({ hardware, level, plan }) {
           <span className="eyebrow">Lesson Flow</span>
           <h3 className="text-2xl font-black tracking-tight mt-1 flex items-center gap-2"><Route className="w-6 h-6 text-violet-500" /> 학교자율시간 수업 흐름</h3>
           <p className="text-sm text-slate-500 mt-1">교육청 피지컬 AI 교육자료의 교수학습 설계 구조(4단계 · 센서→AI→판단→출력)를 이 프로젝트에 맞게 구체화했습니다.</p>
+          {pending && <p className="mt-2 inline-flex items-center gap-2 text-xs font-bold text-violet-700 bg-violet-50 border border-violet-100 rounded-full px-3 py-1"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> 이 프로젝트에 맞는 차시 계획을 작성하고 있어요… (아래는 기본 4단계 틀)</p>}
         </div>
         <div className="flex flex-wrap gap-2">
           <span className="chip"><Clock className="w-3.5 h-3.5" /> 총 {total}분 · {Math.round(total / 40)}차시</span>
