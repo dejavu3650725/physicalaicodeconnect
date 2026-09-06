@@ -1,0 +1,170 @@
+import React, { useMemo, useState } from 'react';
+import { Layers, Code2, ListOrdered, Settings2, Sparkles, Lightbulb, Send, CheckCircle2, AlertTriangle, Wand2, BookOpen, Globe2, ArrowRightLeft, Printer } from 'lucide-react';
+import BlockCanvas from './BlockCanvas.jsx';
+import CodePanel from './CodePanel.jsx';
+import { blockCaption, countBlocks, getBlockDef, PLATFORMS } from '../blocks/engine.js';
+import { LEVELS } from '../data/hardware.js';
+
+function Rich({ text }) {
+  if (!text) return null;
+  return <>{String(text).split('**').map((t, i) => (i % 2 === 1 ? <strong key={i} className="bg-lime-100 text-lime-900 px-1 rounded">{t}</strong> : t))}</>;
+}
+
+function linearize(platformKey, blocks, depth = 0, out = []) {
+  for (const b of blocks || []) {
+    const def = getBlockDef(platformKey, b.type);
+    out.push({ depth, text: blockCaption(platformKey, b).replace(/▼/g, ' ▾'), cat: PLATFORMS[platformKey].colors[def?.cat]?.label, color: PLATFORMS[platformKey].colors[def?.cat]?.fill });
+    if (b.children?.length) linearize(platformKey, b.children, depth + 1, out);
+    if (def?.shape === 'c_else') { out.push({ depth, text: '아니면', color: PLATFORMS[platformKey].colors[def?.cat]?.fill, cat: '' }); linearize(platformKey, b.elseChildren, depth + 1, out); }
+  }
+  return out;
+}
+
+export default function ResultView({ hardware, platformKey, result, onFeedback, onApplyFeedback, onSwapVariant, variantOptions, busyFeedback }) {
+  const [level, setLevel] = useState('standard');
+  const [view, setView] = useState('block');
+  const [userIdea, setUserIdea] = useState('');
+  const [fb, setFb] = useState(null);
+  const [fbView, setFbView] = useState('block');
+  const lv = result.levels[level] || result.levels.basic;
+  const steps = useMemo(() => linearize(platformKey, lv.blocks), [platformKey, lv.blocks]);
+  const unknown = (lv.issues || []).filter((i) => i.kind === 'unknown_block' || i.kind === 'unknown_value');
+
+  const askFeedback = async () => {
+    if (!userIdea.trim() || !onFeedback) return;
+    setFb(null);
+    const r = await onFeedback({ levelKey: level, currentBlocks: lv.blocks, userIdea });
+    if (r) setFb(r);
+  };
+
+  return (
+    <section className="space-y-6 fade-up">
+      {/* 헤더 */}
+      <div className="card p-6 md:p-7 relative overflow-hidden">
+        <div className="absolute -right-10 -top-10 w-48 h-48 rounded-full blur-3xl opacity-25" style={{ background: hardware.gradient }} />
+        <div className="relative flex flex-col lg:flex-row lg:items-start justify-between gap-5">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <span className="chip" style={{ background: hardware.color + '22', borderColor: hardware.color + '55', color: '#0f172a' }}>{hardware.emoji} {hardware.name}</span>
+              <span className="chip">{PLATFORMS[platformKey].tool}</span>
+              {result.lessonLink ? <span className="chip bg-violet-50 border-violet-200 text-violet-700"><BookOpen className="w-3.5 h-3.5" /> 교육청 자료 연계</span> : null}
+              {variantOptions?.length > 1 && (
+                <button onClick={onSwapVariant} className="chip hover:bg-slate-200 transition" title="햄스터 ↔ 햄스터S 블록으로 다시 설계"><ArrowRightLeft className="w-3.5 h-3.5" /> {variantOptions.find((v) => v.key === platformKey)?.label} 전환</button>
+              )}
+            </div>
+            <h2 className="text-2xl md:text-3xl font-black tracking-tight">“{result.title}”</h2>
+            <p className="text-slate-600 mt-2 font-medium leading-relaxed">{result.summary}</p>
+            {result.lessonLink ? <p className="text-violet-700 text-sm mt-2 font-semibold">📚 {result.lessonLink}</p> : null}
+          </div>
+          <div className="seg shrink-0 self-start">
+            {LEVELS.map((L) => (
+              <button key={L.key} className={level === L.key ? 'on' : ''} onClick={() => setLevel(L.key)} title={L.desc}>{L.emoji} {L.name}</button>
+            ))}
+          </div>
+        </div>
+        {result.edgeCase && (
+          <div className="relative mt-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm">
+            <Wand2 className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div><b className="text-amber-800">하드웨어 한계 돌파!</b> <span className="text-amber-900">"{result.edgeCase.wish}" → {result.edgeCase.workaround}</span></div>
+          </div>
+        )}
+        <div className="relative mt-5 flex flex-wrap items-center gap-2 text-sm">
+          <span className="font-extrabold text-slate-700">{LEVELS.find((l) => l.key === level)?.full}</span>
+          <span className="text-slate-500">· {lv.goal}</span>
+          <span className="ml-auto chip">{countBlocks(lv.blocks)} 블록</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* 블록/코드 */}
+        <div className="lg:col-span-3 card p-5 md:p-6 flex flex-col">
+          <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3 mb-4 flex-wrap">
+            <h3 className="font-extrabold text-slate-800 flex items-center gap-2"><Layers className="w-5 h-5 text-indigo-500" /> {PLATFORMS[platformKey].tool} 블록 조립도</h3>
+            <div className="seg">
+              <button className={view === 'block' ? 'on' : ''} onClick={() => setView('block')}>🧱 블록</button>
+              <button className={view === 'steps' ? 'on' : ''} onClick={() => setView('steps')}><ListOrdered className="w-4 h-4 inline -mt-0.5" /> 조립 순서</button>
+              <button className={view === 'code' ? 'on' : ''} onClick={() => setView('code')}><Code2 className="w-4 h-4 inline -mt-0.5" /> 텍스트 코드</button>
+            </div>
+          </div>
+          {unknown.length > 0 && (
+            <div className="mb-3 text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2 flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0" /> 실제 {PLATFORMS[platformKey].tool}에 없는 블록 {unknown.length}개를 자동으로 제외했습니다: {[...new Set(unknown.map((u) => u.type))].join(', ')}</div>
+          )}
+          {view === 'block' && <BlockCanvas key={level} platformKey={platformKey} blocks={lv.blocks} />}
+          {view === 'steps' && (
+            <ol className="space-y-1.5">
+              {steps.map((s, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm" style={{ paddingLeft: s.depth * 22 }}>
+                  <span className="w-6 h-6 rounded-full text-white text-[11px] font-black grid place-items-center shrink-0" style={{ background: s.color }}>{i + 1}</span>
+                  <span className="font-semibold text-slate-800 leading-6">{s.text}</span>
+                  {s.cat ? <span className="ml-auto text-[10px] font-bold text-slate-400 shrink-0 mt-1">{s.cat}</span> : null}
+                </li>
+              ))}
+            </ol>
+          )}
+          {view === 'code' && <CodePanel key={level} platformKey={platformKey} blocks={lv.blocks} />}
+          <div className="mt-4 text-xs text-slate-500 flex items-center gap-2 no-print"><Printer className="w-4 h-4" /> 블록 조립도는 브라우저 인쇄(Ctrl+P)로 학생 활동지처럼 출력할 수 있어요.</div>
+        </div>
+
+        {/* 우측: 해설·변수 */}
+        <div className="lg:col-span-2 space-y-5">
+          <div className="card p-5 md:p-6 bg-gradient-to-br from-[#f3fbe6] to-white border-lime-200">
+            <h3 className="font-extrabold text-lime-900 flex items-center gap-2 mb-2"><Sparkles className="w-5 h-5 text-lime-600" /> 선생님의 사고력 쏙쏙 해설</h3>
+            <p key={level} className="text-[15px] leading-relaxed text-lime-950 fade-up"><Rich text={lv.explanation} /></p>
+            {lv.ctConcepts?.length ? <div className="mt-3 flex flex-wrap gap-1.5">{lv.ctConcepts.map((c, i) => <span key={i} className="chip bg-white border-lime-300 text-lime-800">CT · {c}</span>)}</div> : null}
+            {lv.tryThis ? <div className="mt-4 flex gap-2 items-start text-sm bg-white/80 rounded-xl p-3 border border-lime-200"><Lightbulb className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" /><span><b>도전!</b> {lv.tryThis}</span></div> : null}
+          </div>
+          {result.variables?.length ? (
+            <div className="card p-5 md:p-6">
+              <h3 className="font-extrabold text-slate-800 flex items-center gap-2 mb-3"><Settings2 className="w-5 h-5 text-sky-500" /> 내 맘대로 변수 조작하기</h3>
+              <div className="space-y-3">
+                {result.variables.map((v, i) => (
+                  <div key={i} className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
+                    <div className="flex justify-between items-center mb-1"><span className="font-extrabold text-slate-800">{v.name}</span><span className="chip bg-sky-100 border-sky-200 text-sky-800">기본값 {String(v.value)}</span></div>
+                    <p className="text-sm text-slate-600">{v.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          {result.realWorld ? <div className="card-flat p-4 text-sm text-slate-700 flex gap-2"><Globe2 className="w-5 h-5 text-emerald-500 shrink-0" /><span><b>실생활 연결</b> · {result.realWorld}</span></div> : null}
+        </div>
+      </div>
+
+      {/* 피드백 */}
+      {onFeedback && (
+        <div className="card overflow-hidden">
+          <div className="bg-[#0b1220] text-white p-5 md:p-6 flex items-center gap-3 relative overflow-hidden">
+            <div className="absolute -right-6 -top-6 w-32 h-32 bg-lime-400/10 rounded-full blur-2xl" />
+            <div className="bg-white/10 p-2.5 rounded-2xl"><Send className="w-6 h-6 text-lime-300" /></div>
+            <div><h3 className="text-lg font-extrabold">나만의 번뜩이는 아이디어 더하기 💡</h3><p className="text-slate-300 text-sm">현재 단계({LEVELS.find((l) => l.key === level)?.name}) 코드에 어떤 기능을 더할까요? 선생님 피드백과 함께 블록이 즉시 업데이트돼요.</p></div>
+          </div>
+          <div className="p-5 md:p-6 bg-slate-50/60 space-y-4">
+            <textarea value={userIdea} onChange={(e) => setUserIdea(e.target.value)} className="input h-28 resize-none" placeholder={`예: ${hardware.id === 'microbit' ? '목표 걸음 수에 도달하면 친구에게 라디오로 알려주고 싶어요.' : hardware.id === 'tory' ? '착륙하기 전에 LED를 세 번 깜빡이며 소리도 나게 하고 싶어요.' : '장애물을 발견하면 멈추는 것뿐 아니라 LED를 빨갛게 켜고 경고음도 내고 싶어요.'}`} />
+            <div className="flex justify-end"><button onClick={askFeedback} disabled={busyFeedback || !userIdea.trim()} className="btn btn-dark">{busyFeedback ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> 쌤이 읽어보는 중…</> : <><Send className="w-4 h-4" /> 선생님에게 피드백 받기</>}</button></div>
+            {fb && (
+              <div className="rounded-3xl border-2 border-emerald-200 bg-emerald-50 p-5 space-y-4 pop">
+                <h4 className="font-extrabold text-emerald-800 flex items-center gap-2 text-lg"><CheckCircle2 className="w-6 h-6 text-emerald-600" /> 선생님의 특급 피드백 도착! 💌</h4>
+                <div className="grid md:grid-cols-2 gap-3">
+                  <div className="bg-white rounded-2xl p-4 border border-emerald-100"><span className="chip bg-emerald-100 border-emerald-200 text-emerald-800 mb-2">폭풍 칭찬해요 👍</span><p className="text-slate-700 leading-relaxed text-sm">{fb.strengths}</p></div>
+                  <div className="bg-white rounded-2xl p-4 border border-amber-100"><span className="chip bg-amber-100 border-amber-200 text-amber-800 mb-2">이렇게 해볼까요? 💡</span><p className="text-slate-700 leading-relaxed text-sm">{fb.improvements}</p></div>
+                </div>
+                {fb.edgeCase ? <div className="text-sm bg-amber-50 border border-amber-200 rounded-xl p-3"><b>우회 아이디어</b> · {fb.edgeCase.workaround}</div> : null}
+                {fb.changes?.length ? <ul className="text-sm text-emerald-900 list-disc pl-5 space-y-1">{fb.changes.map((c, i) => <li key={i}>{c}</li>)}</ul> : null}
+                <div className="bg-white rounded-3xl border border-slate-200 p-5 space-y-4">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <h4 className="font-extrabold text-slate-800 flex items-center gap-2"><Sparkles className="w-5 h-5 text-amber-400" /> 아이디어가 더해진 알고리즘 🚀</h4>
+                    <div className="flex gap-2 items-center">
+                      <div className="seg"><button className={fbView === 'block' ? 'on' : ''} onClick={() => setFbView('block')}>🧱 블록</button><button className={fbView === 'code' ? 'on' : ''} onClick={() => setFbView('code')}>💻 코드</button></div>
+                      {onApplyFeedback && <button className="btn btn-primary !py-2 !px-3 text-xs" onClick={() => { onApplyFeedback(level, fb.blocks); setFb(null); setUserIdea(''); }}>이 버전을 {LEVELS.find((l) => l.key === level)?.name} 단계에 적용</button>}
+                    </div>
+                  </div>
+                  {fbView === 'block' ? <BlockCanvas platformKey={platformKey} blocks={fb.blocks} /> : <CodePanel platformKey={platformKey} blocks={fb.blocks} />}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}

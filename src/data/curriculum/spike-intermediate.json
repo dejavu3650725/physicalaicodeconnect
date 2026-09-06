@@ -1,0 +1,540 @@
+{
+  "id": "spike-intermediate",
+  "hardware": "spike",
+  "level": "중급",
+  "chapter": "CHAPTER 02",
+  "title": "스마트 모빌리티 로봇 만들기",
+  "subtitle": "레고 스파이크 프라임 중급",
+  "tagline": "로봇 코딩을 통해 알고리즘 능력과 AI 사용 능력을 함양함",
+  "tools": ["레고 스파이크 프라임", "Lego Spike 소프트웨어(3.5 이상) 파이썬", "허스키 렌즈", "허스키렌즈와 전용 연결 케이블", "로봇 미션 매트(붙임1)", "프로그램용 컴퓨터(노트북, 디벗, PC)", "블루투스 통신"],
+  "software": "파이썬",
+  "source": { "book": "피지컬 AI 원리를 활용한 문제해결 프로젝트 자료집", "publisher": "서울특별시교육청", "pages": "165-180" },
+  "designIntent": [
+    "로봇 코딩을 통해 알고리즘 능력과 AI 사용 능력을 함양함"
+  ],
+  "curriculum": {
+    "competencies": "AI 인재상 핵심역량: 수리·컴퓨팅 사고 역량, 인공지능 이해 및 활용 역량",
+    "domain": "컴퓨팅 시스템, 인공지능",
+    "coreIdea": "하드웨어와 소프트웨어의 유기적 연결을 통해 동작하는 컴퓨팅 시스템은 사회적, 기술적 가치를 높이는 데 활용된다. / 기계학습 기반의 인공지능을 구현하기 위해서는 문제 해결에 적합한 데이터와 기계학습 모델을 활용한다.",
+    "standards": [
+      { "code": "[12정01-03]", "text": "문제 해결에 적합한 피지컬 컴퓨팅 시스템 장치를 선택하여 사물인터넷 시스템을 설계한다." },
+      { "code": "[12정04-03]", "text": "기계학습을 활용하여 해결할 수 있는 문제와 그렇지 않은 문제를 구분하고, 사회문제 해결에 기계학습을 적용한다." }
+    ]
+  },
+  "goals": [
+    "로봇을 프로그래밍하여 주어진 목적지까지 최단 거리 이동하는 알고리즘을 구현한다."
+  ],
+  "topics": [
+    "스마트 모빌리티 로봇 만들기"
+  ],
+  "sessions": [
+    {
+      "no": "1",
+      "stage": "AI / 미션 이해, 함수, 좌표 시스템",
+      "contents": [
+        { "title": "좌표 시스템", "subs": ["로봇 미션 이해", "비동기 프로그래밍 이해", "로봇 하드웨어 사용 준비 – 함수 활용", "주어진 미션을 해결하기 위한 좌표 시스템 설계"] }
+      ],
+      "tools": ["Lego SpikePrime"]
+    },
+    {
+      "no": "2",
+      "stage": "AI / 네트워크 라우팅",
+      "contents": [
+        { "title": "간단한 길 안내 알고리즘", "subs": ["네트워크 라우팅의 이해", "각 좌표의 라우팅 테이블 만들기", "방향 지정 이동 함수 만들기"] }
+      ],
+      "tools": ["Lego SpikePrime"]
+    },
+    {
+      "no": "3",
+      "stage": "AI / 버튼 제어, 디버깅",
+      "contents": [
+        { "title": "출발과 복귀", "subs": ["버튼을 제어하여 목적지 입력하기", "충전 기지 출발 / 복귀 구현", "종합 미션 테스트"] }
+      ],
+      "tools": ["Lego SpikePrime"]
+    },
+    {
+      "no": "4",
+      "stage": "AI / 물체 분류, 분류 결과 전송",
+      "contents": [
+        { "title": "인공지능", "subs": ["인공지능 카메라 사용하기", "물체 분류 모델 만들기", "물체 분류를 활용한 미션 설계하기"] }
+      ],
+      "tools": ["Lego SpikePrime", "허스키 렌즈"]
+    }
+  ],
+  "prologue": {
+    "educationalValue": [
+      "블록 코딩의 한계를 넘어 파이썬 텍스트 코딩을 통해 정밀하게 데이터를 제어하고 AI 알고리즘을 실제적으로 구현해볼 수 있음",
+      "파이썬은 전 세계적으로 가장 널리 쓰이는 AI 언어로, 레고 스파이크 로봇 뿐 아니라 라즈베리파이, ESP32와 같은 다양한 피지컬 컴퓨팅 보드로의 전이성이 좋음",
+      "실생활의 복잡한 상황을 정밀하게 표현하고, 복합적이고 지능화된 자동화 시스템을 설계하는 것이 가능함",
+      "실제 산업 현장의 핵심 기술을 체득하고 전문적인 미래 진로를 탐색하고 역량을 다지는 발판이 됨"
+    ],
+    "flow": {
+      "sensors": ["초음파 센서(거리 센서)", "컬러 센서", "허스키 렌즈", "허브 버튼(왼쪽/오른쪽)"],
+      "ai": ["허스키 렌즈에서 제공하는 이미지 분류(물체 분류)"],
+      "actuators": ["모터 페어(C+D)", "라이트 매트릭스", "사운드(비프음)"]
+    },
+    "differentiation": [
+      "중등에서의 파이썬을 활용하는 피지컬 AI 교육 활동",
+      "단순히 코드를 따라서 작성해보기보다는 목적을 구현해나가는 과정을 이해하는 것에 중점을 둠",
+      "문제를 해결하기 위해 여러 단계를 거쳐나가는 과정을 경험토록 함"
+    ]
+  },
+  "preparation": {
+    "classroom": [
+      "로봇 미션 매트(붙임1)를 교실 빈 공간에 설치하고, 1~2명을 한 모둠으로 구성하고 자리를 배치",
+      "모둠 당 스파이크 프라임 로봇 1대를 조립도(붙임3) 형태로 준비",
+      "모둠 당 노트북 PC 1대를 준비하고, Lego Spike 소프트웨어(3.5 이상)를 설치"
+    ],
+    "grouping": [
+      "각 모둠원은 '소프트웨어 담당'과 '하드웨어 담당'으로 역할 부여",
+      "소프트웨어 담당: 파이썬 프로그램 작성 및 수정",
+      "하드웨어 담당: 로봇의 실제 움직임 관찰 및 정비"
+    ],
+    "materials": [
+      "로봇 미션 매트(2025 학교 연합 로봇 AI 캠프용, 가로 2.4m × 세로 1.2m, PDF 인쇄)",
+      "경사를 만들기 위한 A4 크기의 MDF 3장(200x290x3mm)과 3D 프린팅된 기둥 구조물",
+      "레고 스파이크 프라임 로봇(붙임3 조립도)",
+      "노트북 PC + Lego Spike 소프트웨어(3.5 이상)",
+      "허스키렌즈와 전용 연결 케이블(4차시)",
+      "블루투스 통신을 활용하여 로봇 연결"
+    ]
+  },
+  "concepts": {
+    "basics": [
+      "레고 스파이크 3.x 소프트웨어의 파이썬 프로그래밍을 이해하기 위한 비동기 프로그래밍을 설명하고, 동기 프로그래밍과의 코드 특성 차이 설명",
+      "레고 스파이크 3.x 소프트웨어의 복잡한 명령을 편리하게 사용하기 위한 함수를 설계하고, 사용법을 익힘",
+      "로봇의 위치를 계산하는 좌표 시스템의 개념을 설명하고, 방향에 따른 이동과 회전에 의해 좌표와 방향을 계산하는 법을 설명",
+      "제한된 상황에 따라 익숙한 (x, y) 좌표계 대신 변수 하나를 사용하는 좌표 시스템을 설정하고, 동, 서, 남, 북 방향으로 이동에 따른 좌표 값 계산",
+      "로봇의 처음 방향을 설정하고, 좌회전 또는 우회전에 따라 방향 값을 변경",
+      "로봇이 이동할 때 방향에 따라 좌표 값 계산",
+      "로봇이 원하는 위치를 찾아가기 위해 지정 방향으로 회전 후 이동하는 함수 생성",
+      "제한된 상황에서 사용할 수 있는 라우팅 방식의 알고리즘을 사용. 모든 노드에서 목적지를 입력하면 이동해야 할 방향을 알려주고, 로봇이 이동하면 다시 이동한 노드에서 이동해야 할 방향을 찾는 것을 반복"
+    ],
+    "principle": [
+      "피지컬 도구 : 레고 스파이크 프라임",
+      "활용 센서 : 초음파 센서(거리 센서), 컬러 센서, 허스키 렌즈",
+      "AI 훈련 모델 : 허스키 렌즈에서 제공하는 이미지 분류"
+    ]
+  },
+  "algorithm": [
+    { "step": "1단계", "process": "좌표 시스템 설정", "detail": "변수 하나(pos)를 사용하는 좌표 시스템과 방향 변수(heading, 시계 방향 0/3/6/9)를 설정한다. 시작 위치 pos = 1, 시작 방향 heading = 3.", "example": "pos = 1, heading = 3" },
+    { "step": "2단계", "process": "회전 시 방향 값 변화", "detail": "우회전하면 heading = (heading + 3) % 12, 좌회전하면 heading = (heading + 9) % 12로 갱신한다. heading은 전역 변수이므로 global 처리가 필요함.", "example": "async def turn_right(vel=500): global heading; heading = (heading + 3) % 12" },
+    { "step": "3단계", "process": "이동 시 좌표 값 변화", "detail": "line_trace로 한 칸 이동할 때 heading == 0: pos -= 3, 3: pos += 1, 6: pos += 3, 9: pos -= 1. 예외 처리: pos == 5 인 경우 heading == 0이면 pos = 2, heading == 6이면 pos = 8. 라이트 매트릭스에 계산된 좌표 표시.", "example": "light_matrix.write(str(pos))" },
+    { "step": "4단계", "process": "방향 지정 이동 함수(line_heading)", "detail": "목표 방향이 현재 방향과 같으면 직진, +3이면 우회전 후 직진, +9이면 좌회전 후 직진, 그 외(반대 방향)에는 우회전 두 번 후 직진한다.", "example": "await line_heading(0) / (3) / (6) / (9)" },
+    { "step": "5단계", "process": "네트워크 라우팅(router)", "detail": "현재 노드(pos)에서 목적지(target_pos)에 따라 이동해야 할 방향을 라우팅 테이블로 정하고, pos != target_pos인 동안 반복한다. 1~3번 노드는 같이 만들고 4~9번 노드는 직접 만든다.", "example": "if pos == 1: if target_pos in [4,5,7]: await line_heading(6) else: await line_heading(3)" },
+    { "step": "6단계", "process": "버튼으로 목적지 입력", "detail": "왼쪽 버튼을 누르면 target 증가(10이면 0으로), 오른쪽 버튼을 누르면 target 값 반환하고 종료. 충전 기지의 좌표는 0.", "example": "button.pressed(button.RIGHT) / button.pressed(button.LEFT)" },
+    { "step": "7단계", "process": "충전 기지에서 출발/복귀", "detail": "t_pos == 0이면 landing()으로 복귀, pos == 0이면 takeoff()로 출발 후 router(t_pos)로 이동. takeoff: 20cm 전진 후 선 따라가기, pos=1, heading=3. landing: 7번 위치까지 이동, 9시 방향으로 라인 트레이싱, 약간 전진 후 pos=0, heading=3.", "example": "await takeoff() / await landing()" },
+    { "step": "8단계", "process": "허스키렌즈 물체 분류 결과를 코드에 적용", "detail": "line_trace 중 color_sensor.reflection(port.A) 값으로 분류 결과를 받아 정지 표지판(==1)에서는 멈추기, 어린이보호구역 표지판(==2)에서는 속도 조절(vel = 150), 공사중 신호(==3)에서는 우회(우회전 두 번 후 line_trace)한다.", "example": "if color_sensor.reflection(port.A) == 1 : motor_pair.stop(motor_pair.PAIR_1)" }
+  ],
+  "lessons": [
+    {
+      "session": "1차시",
+      "title": "1차시 학습(Making)",
+      "focus": "로봇이 현재 위치를 기억할 수 있도록, 좌표 시스템을 구상하고 위치를 계산할 수 있다.",
+      "inquiry": ["로봇은 자신의 위치를 알 수 있을까?", "로봇은 자신의 방향을 알 수 있을까?"],
+      "goal": "주어진 상황에 맞는 좌표 시스템을 구상하고, 로봇의 이동에 따른 위치를 계산할 수 있다.",
+      "topic": "좌표 시스템과 로봇의 이동",
+      "steps": [
+        { "name": "도입 <동기유발>", "description": "사용할 로봇 미션에 대해 설명 - 제시된 목적지를 방문하는 것을 반복 - 충전소에서 나올 때는 파란 선을 따라 이동 - 충전소로 들어갈 때는 빨간 선을 따라 이동 - 검정 선은 양쪽 방향 이동 가능", "teacherTips": ["로봇 미션 매트 제시"] },
+        { "name": "전개", "description": "준비 작업 - 하드웨어 사용준비 및 동작 모터 설정의 필요성 설명 - 비동기 프로그래밍 설명 - 편리한 프로그래밍을 위한 몇 가지 함수 설계 / 좌표 시스템 만들기 - 위치, 방향 변수 설정하기 - 회전 시 방향 값 변화 - 이동 시 좌표 값 변화 / 로봇 기본 동작 확인 - 로봇이 회전하고 이동할 때마다 방향과 좌표 값 확인", "teacherTips": ["로봇으로 미션을 수행하기 위한 밑 작업에 해당하며, 학생들이 코드를 직접 작성하기 보다는 뼈대 코드처럼 제공하고 용도와 사용법을 설명하는 방식으로 수업합니다.", "활용 교구: 레고스파이크프라임, 프로그램용 컴퓨터(노트북, 디벗, PC), 블루투스 통신을 활용하여 로봇 연결"] },
+        { "name": "정리", "description": "실제 로봇이 자신의 위치와 방향을 알아내는 방법 생각해보기 / 차시 예고", "teacherTips": ["실생활에서 사용할 수 있는 로봇을 만들기 위해 고려해야 하는 상황이 많고, 이를 블록 코딩으로 해결하기 어려움을 인지시킴"] }
+      ],
+      "codeSnippets": [
+        {
+          "tool": "파이썬",
+          "description": "① 좌표 시스템 만들기 - 로봇의 위치 : pos / 로봇의 방향 : heading / 시작 위치 : pos = 1 / 시작 방향 : heading = 3",
+          "blocks": [
+            "# 프로그램이 시작될 때",
+            "pos = 1",
+            "heading = 3",
+            "",
+            "async def main():",
+            "  # 여기에 코드를 작성하세요.",
+            "  pass"
+          ]
+        },
+        {
+          "tool": "파이썬",
+          "description": "② 회전 시 방향 값 변화(코드) - heading은 전역 변수이므로 값을 바꾸기 위해 global 처리가 필요함",
+          "blocks": [
+            "async def turn_right(vel=500):",
+            "  global heading",
+            "  heading = (heading + 3) % 12",
+            "  await motor_pair.move_for_degrees(motor_pair.PAIR_1, 180, 100, velocity=vel)"
+          ]
+        },
+        {
+          "tool": "파이썬",
+          "description": "③ 이동 시 좌표 값 변화(코드) - pos는 전역 변수이므로 값을 바꾸기 위해 global 처리가 필요함 / 예외 처리 : pos == 5 인 경우 / 라이트 매트릭스에 계산된 좌표 표시",
+          "blocks": [
+            "async def line_trace(target_color …",
+            "  global pos",
+            "  if  heading == 0 : pos -= 3",
+            "  elif heading == 3 : pos += 1",
+            "  elif heading == 6 : pos += 3",
+            "  elif heading == 9 : pos -= 1",
+            "  if pos == 5 :",
+            "    if  heading == 0 : pos = 2",
+            "    elif heading == 6 : pos = 8",
+            "  light_matrix.write(str(pos))",
+            "",
+            "  while color_sensor.color(port.A) …"
+          ]
+        },
+        {
+          "tool": "파이썬",
+          "description": "④ 테스트 코드 - 1번 좌표에서 3시 방향으로 출발 / 각 좌표에 도착할 때마다 라이트 매트릭스에 좌표가 제대로 뜨는지 확인",
+          "blocks": [
+            "async def main():",
+            "  # 여기에 코드를 …",
+            "  await line_trace()",
+            "  await turn_right()",
+            "  await line_trace()",
+            "  await turn_left()",
+            "  await line_trace()",
+            "  await turn_left()",
+            "  await line_trace()",
+            "  await turn_left()",
+            "  await line_trace()",
+            "  await line_trace()",
+            "  pass"
+          ]
+        }
+      ],
+      "worksheets": ["붙임2 학습 자료 02(뼈대코드)", "붙임1 로봇 미션 매트"],
+      "assessment": ["좌표 시스템(pos, heading)을 구상하고 로봇의 회전·이동에 따른 값을 계산할 수 있는가", "라이트 매트릭스에 좌표가 제대로 표시되는지 확인할 수 있는가"]
+    },
+    {
+      "session": "2차시",
+      "title": "2차시 학습(Algorithm)",
+      "focus": "좌표 시스템을 활용하여 로봇이 현재 위치에서 목표 위치로 이동할 수 있다.",
+      "inquiry": ["인터넷에서 데이터는 어떻게 정확한 위치로 전달될까?", "지도 없이 초행길을 갈 때 목적지를 찾아갈 수 있는 쉬운 방법은 무엇이 있을까?"],
+      "goal": "네트워크 라우팅으로 목적지를 찾아가는 방법을 로봇에 구현한다.",
+      "topic": "라우팅에 의한 목적지 이동",
+      "steps": [
+        { "name": "도입 <동기유발>", "description": "네트워크 라우팅 설명 - 인터넷의 복잡한 구조 보여주기 - 라우터 장비의 역할 설명", "teacherTips": ["해저 광케이블 지도"] },
+        { "name": "전개", "description": "1~9번 노드의 라우팅 테이블 만들기 - 목적지 별 이동 방향 분류하기 / 방향을 지정하여 이동하는 함수 설계 - 회전 없이 이동하는 경우 찾아보기 - 우회전하여 이동하는 경우 - 좌회전하여 이동하는 경우 - 뒤로 돌아 이동하는 경우 / 노드 별 이동 코드 작성하기 - 1~3번 노드는 같이 만들어보기 - 4~9번 노드는 직접 만들어보기 / 로봇 기본 동작 확인 - 목적지를 제시하고 제대로 찾아가는지 테스트", "teacherTips": ["단순히 코드를 따라서 작성해보기보다는 목적을 구현해나가는 과정을 이해하는 것에 중점을 둠", "문제를 해결하기 위해 여러 단계를 거쳐나가는 과정을 경험토록 함", "활용 교구: 레고스파이크프라임, 프로그램용 컴퓨터(노트북, 디벗, PC), 블루투스 통신을 활용하여 로봇 연결"] },
+        { "name": "정리", "description": "실제 로봇이나 자동차가 목적지를 찾는 방법 생각해보기 - 각종 길찾기 알고리즘 제시 / 차시 예고", "teacherTips": ["자동차 내비게이션, GPS 등의 원리 제시"] }
+      ],
+      "codeSnippets": [
+        {
+          "tool": "파이썬",
+          "description": "① 완성된 방향 이동 함수 - 0시 방향으로 한 칸 라인트레이싱 : await line_heading(0) / 3시 방향 : await line_heading(3) / 6시 방향 : await line_heading(6) / 9시 방향 : await line_heading(9)",
+          "blocks": [
+            "async def line_heading(target_heading) :",
+            "  if target_heading == heading :",
+            "    await line_trace()",
+            "  elif target_heading == (heading + 3) % 12 :",
+            "    await turn_right()",
+            "    await line_trace()",
+            "  elif target_heading == (heading + 9) % 12 :",
+            "    await turn_left()",
+            "    await line_trace()",
+            "  else :",
+            "    await turn_right()",
+            "    await turn_right()",
+            "    await line_trace()"
+          ]
+        },
+        {
+          "tool": "파이썬",
+          "description": "② 테스트 코드 - 1번 좌표에서 3시 방향으로 출발 / 각 좌표에 도착할 때마다 라이트 매트릭스에 좌표가 제대로 뜨는지 확인",
+          "blocks": [
+            "async def main():",
+            "  # 여기에 코드를 …",
+            "  await line_heading(3)",
+            "  await line_heading(6)",
+            "  await line_heading(3)",
+            "  await line_heading(0)",
+            "  await line_heading(9)",
+            "  await line_heading(9)",
+            "  pass"
+          ]
+        },
+        {
+          "tool": "파이썬",
+          "description": "③ 1~3번 라우터 코드 - 로봇의 좌표 : pos / 목적지 좌표 : target_pos",
+          "blocks": [
+            "async def router(target_pos) :",
+            "  while pos != target_pos :",
+            "    if pos == 1 :",
+            "      if target_pos in [4,5,7]  : await line_heading(6)",
+            "      else                     : await line_heading(3)",
+            "    elif pos == 2 :",
+            "      if  target_pos in [1,4,5] : await line_heading(9)",
+            "      elif target_pos in [3,6]  : await line_heading(3)",
+            "      else                     : await line_heading(6)",
+            "    elif pos == 3 :",
+            "      if target_pos in [5,6,9]  : await line_heading(6)",
+            "      else                     : await line_heading(9)"
+          ]
+        },
+        {
+          "tool": "파이썬",
+          "description": "④ 테스트 코드 - 1번 좌표에서 3시 방향으로 출발 / 목적지에 도착할 때마다 비프음이 나는지 확인",
+          "blocks": [
+            "async def main():",
+            "  # 여기에 코드를 작성하세요.",
+            "  await router(9)",
+            "  await router(5)",
+            "  await router(3)",
+            "  await router(8)",
+            "  await router(7)",
+            "  pass"
+          ]
+        }
+      ],
+      "worksheets": ["1~9번 노드의 라우팅 테이블 만들기(4~9번 노드 직접 작성)"],
+      "assessment": ["각 노드의 라우팅 테이블을 작성하고 코드로 구현할 수 있는가", "목적지를 제시했을 때 로봇이 제대로 찾아가는가"]
+    },
+    {
+      "session": "3차시",
+      "title": "3차시 학습(Application)",
+      "focus": "설계한 알고리즘을 테스트하여 문제를 발견하고 수정할 수 있다.",
+      "inquiry": ["지역의 주차난 해소를 위하여 어떤 방법을 제시할 수 있을까?", "실생활의 문제를 해결하기 위해 피지컬 컴퓨팅을 어떻게 활용해야 할까?"],
+      "goal": "피지컬 컴퓨팅을 활용하여 실생활의 문제를 해결할 수 있다.",
+      "topic": "피지컬 컴퓨팅을 활용하여 지역의 주차 문제를 해결하기",
+      "steps": [
+        { "name": "도입 <동기유발>", "description": "인터페이스의 중요성 생각해보기 - 컴퓨터나 스마트폰 앱의 인터페이스 비교해보기 - 일상 생활에서 사용해본 불편한 기기와 편리한 기기 비교해보기", "teacherTips": ["편리한 앱이나 기기의 예시와 불편한 앱이나 기기의 예시 제공"] },
+        { "name": "전개", "description": "버튼으로 목적지 입력하기 - 허브의 제한된 버튼으로 인터페이스 구상하기 - 구상한 인터페이스를 코드로 구현하기 / 충전 기지에서 출발하고 복귀하기 - 출발하는 코드와 복귀하는 코드 작성해보기 - 버튼으로 목적지 입력하는 코드 수정하기 / 로봇 기본 동작 확인 - 버튼으로 목적지를 입력하면서 제대로 찾아가는지 테스트", "teacherTips": ["조립의 완성도 보다 각 센서의 기능과 역할을 직관적으로 이해할 수 있도록 지도", "다른 레고 브릭을 활용하여 자동차를 만들거나 미술 시간을 활용하여 나만의 자동차 디자인하기 활동하여 구체물을 활용", "차단기를 올리고 내릴 때 주차장에 부착하지 않고 코딩하여 시험한 후 주차장에 부착하도록 지도", "활용 교구: 레고스파이크프라임, 프로그램용 컴퓨터(노트북, 디벗, PC), 블루투스 통신을 활용하여 로봇 연결"] },
+        { "name": "정리", "description": "자율주행 자동차나 생성형 인공지능의 인터페이스 생각해보기 / 차시 예고", "teacherTips": ["로봇을 활용하여 실생활 문제를 해결할 수 있는 사례 찾아보기"] }
+      ],
+      "codeSnippets": [
+        {
+          "tool": "파이썬",
+          "description": "① 버튼으로 목적지 입력하기 - 왼쪽 버튼을 누르면 target 증가 / 오른쪽 버튼을 누르면 target 값 반환하고 종료 / 오른쪽 버튼 눌림 : button.pressed(button.RIGHT) / 왼쪽 버튼 눌림 : button.pressed(button.LEFT) / 충전 기지의 좌표 : 0",
+          "blocks": [
+            "async def input_target() :",
+            "  target = pos",
+            "  light_matrix.write(str(target))",
+            "  while not button.pressed(button.RIGHT) :",
+            "    if button.pressed(button.LEFT) :",
+            "      target += 1",
+            "      if target == 10 : target = 0",
+            "      while button.pressed(button.LEFT) :",
+            "        pass",
+            "      light_matrix.write(str(target))",
+            "  return target"
+          ]
+        },
+        {
+          "tool": "파이썬",
+          "description": "② 충전 기지에서 출발/복귀 - 목표 좌표 : t_pos / 출발 함수 : takeoff() / 복귀 함수 : landing() / 충전 기지의 좌표 : 0",
+          "blocks": [
+            "async def main():",
+            "  # 여기에 코드를 작성하세요.",
+            "  while True :",
+            "    t_pos = await input_target()",
+            "    if t_pos == 0 :",
+            "      await landing()",
+            "      continue",
+            "    if pos == 0 :",
+            "      await takeoff()",
+            "    await router(t_pos)"
+          ]
+        },
+        {
+          "tool": "파이썬",
+          "description": "③ 충전 기지에서 출발 - 20cm 전진 후 선 따라가기 / 좌표와 방향 설정",
+          "blocks": [
+            "async def takeoff() :",
+            "  global pos, heading",
+            "  await move_cm(20)",
+            "  await line_trace(dir=50)",
+            "  pos = 1",
+            "  heading = 3"
+          ]
+        },
+        {
+          "tool": "파이썬",
+          "description": "④ 충전 기지로 복귀 - 7번 위치까지 이동 / 9시 방향으로 라인 트레이싱 / 약간 전진 후 좌표와 방향 설정",
+          "blocks": [
+            "async def landing() :",
+            "  global pos, heading",
+            "  await router(7)",
+            "  if heading == 6 : await turn_right()",
+            "  await line_trace(color.BLACK, dir=50)",
+            "  await move_cm(12)",
+            "  pos = 0",
+            "  heading = 3"
+          ]
+        }
+      ],
+      "worksheets": ["버튼 인터페이스 구상 및 출발/복귀 코드 작성"],
+      "assessment": ["허브의 제한된 버튼으로 목적지 입력 인터페이스를 구현할 수 있는가", "충전 기지 출발/복귀를 포함한 종합 미션을 테스트하고 오류를 수정(디버깅)할 수 있는가"]
+    },
+    {
+      "session": "4차시",
+      "title": "4차시 학습(Attachment)",
+      "focus": "로봇에 인공지능 기능을 추가하여 교통 표지판을 인식하여 작동하도록 할 수 있다.",
+      "inquiry": ["원하는 사람의 얼굴을 AI에게 훈련시키기 위해서 어떻게 해야할까?"],
+      "goal": "인공지능 비전 센서의 데이터를 이용하여 로봇을 움직일 수 있다.",
+      "topic": "인공지능 비전 센서 데이터를 이용한 로봇 제어",
+      "steps": [
+        { "name": "도입 <동기유발>", "description": "실제 도로 현장의 다양한 변수에도 불구하고 교통사고를 줄이는 방법 생각해보기 - 교통 표지판과 교통 신호 - 운전 중 지켜야 할 규칙", "teacherTips": ["각종 교통 표지판과 신호 체계", "운전면허 시험 퀴즈"] },
+        { "name": "전개", "description": "허스키렌즈 사용법 설명 - 내장 기능 소개 - 물체 분류 기능 사용해보기 - 로봇에 연결하여 인식 값 확인하기 / 허스키렌즈의 물체 분류 결과를 코드에 적용하기 - 정지 표지판에서는 멈추기 - 어린이보호구역 표지판에서는 속도 조절하기 – 변숫값 활용 - 공사중 신호에서는 우회하기 / 로봇 기본 동작 확인 - 버튼으로 목적지를 입력하면서 허스키렌즈의 인식 결과가 반영되는지 테스트", "teacherTips": ["허스키렌즈의 사용법은 직관적이지 않으므로 사용법에 익숙해지기 위한 시간을 충분히 제공", "허스키렌즈의 설치 위치나 각도가 바뀌지 않도록 유의시키고, 미션매트 주변 환경 변화에 유의", "활용 교구: 레고스파이크프라임, 프로그램용 컴퓨터(노트북, 디벗, PC), 블루투스 통신을 활용하여 로봇 연결, 허스키렌즈와 전용 연결 케이블"] },
+        { "name": "정리", "description": "피지컬 AI 기술이 도입된 로봇이나 기기의 유익한 점 생각해보기 / 추가로 적용해보고 싶은 AI 기술 찾아보기", "teacherTips": ["다가오는 피지컬 AI의 시대에서 어떤 역할을 할 것인지, 무슨 일을 할 수 있는지 예상하기"] }
+      ],
+      "codeSnippets": [
+        {
+          "tool": "파이썬",
+          "description": "① 정지 신호를 인식한 경우 (예시)",
+          "blocks": [
+            "async def line_trace(target_color=color.GREEN, dir=30, end=13):",
+            "  …",
+            "  light_matrix.write(str(pos))",
+            "  vel = 300",
+            "  while color_sensor.color(port.B) != target_color:",
+            "    if color_sensor.reflection(port.A) == 1 :",
+            "      motor_pair.stop(motor_pair.PAIR_1)",
+            "      continue"
+          ]
+        },
+        {
+          "tool": "파이썬",
+          "description": "② 어린이 보호 구역 신호를 인식한 경우 (예시)",
+          "blocks": [
+            "async def line_trace(target_color=color.GREEN, dir=30, end=13):",
+            "  …",
+            "  light_matrix.write(str(pos))",
+            "  vel = 300",
+            "  while color_sensor.color(port.B) != target_color:",
+            "    if …",
+            "    elif color_sensor.reflection(port.A) == 2 :",
+            "      vel = 150"
+          ]
+        },
+        {
+          "tool": "파이썬",
+          "description": "③ 공사중 신호를 인식한 경우 (예시)",
+          "blocks": [
+            "async def line_trace(target_color=color.GREEN, dir=30, end=13):",
+            "  …",
+            "  while color_sensor.color(port.B) != target_color:",
+            "    if …",
+            "    elif …",
+            "    elif color_sensor.reflection(port.A) == 3 :",
+            "      await turn_right()",
+            "      await turn_right()",
+            "      await line_trace()"
+          ]
+        }
+      ],
+      "worksheets": ["허스키렌즈 물체 분류 모델 만들기(정지/어린이보호구역/공사중 표지판)", "물체 분류를 활용한 미션 설계하기"],
+      "assessment": ["허스키렌즈로 교통 표지판을 분류하는 모델을 만들고 로봇에서 인식 값을 확인할 수 있는가", "분류 결과에 따라 멈추기·속도 조절·우회 동작을 코드에 적용할 수 있는가"]
+    }
+  ],
+  "attachments": [
+    {
+      "title": "붙임1 학습 자료 01",
+      "summary": "로봇 미션 매트(2025 학교 연합 로봇 AI 캠프). 1~9번 노드가 3×3 격자로 배치되고 검정 선으로 연결되며, 좌측(파란색 곡선)과 우측(주황색 곡선)에 충전소 진출입로가 있고 중앙 5번 노드에 경사(고가도로 주행/터널 주행)가 있음. 노드 주변 미션 표기: 색상 연주, 미로 라운드, 터널 주행, 고가도로 주행, 장애물 감지, 변속 주행 등. 학습 교구 소개: 2025 학교 연합 로봇 AI 캠프에 사용한 로봇 미션 매트로, 전체 크기는 대략 가로 2.4m, 세로 1.2m 정도이며 PDF 파일로 인쇄 가능하며, 경사를 만들기 위한 A4 크기의 MDF 3장과 3D 프린팅된 기둥 구조물이 필요합니다. 학습 자료 링크 및 설명 목록: 1 로봇 미션 매트 PDF 파일 / 2 MDF 구입 링크 (200x290x3mm) / 4 3D 프린팅 기둥 구조물",
+      "links": [
+        "https://drive.google.com/file/d/1nx8EGoqFFa0R43HFOBWG9o0LblHdp-Jh/view?usp=sharing",
+        "http://www.11st.co.kr/products/4066605417/share",
+        "https://drive.google.com/file/d/1ul9fpe-MaFlewGdJHZ5Xu59dd7Yo802i/view?usp=sharing"
+      ]
+    },
+    {
+      "title": "붙임2 학습 자료 02(뼈대코드)",
+      "summary": "레고 스파이크 파이썬을 사용하기 위해 기본적으로 제공되면 좋은 코드. 준비작업(import, 모터 페어 설정, move/move_cm/turn_right/turn_left/line_trace 함수)과 main() 뼈대.",
+      "code": [
+        "############################ 준비작업 시작 ############################",
+        "from hub import port, sound, button, light_matrix",
+        "import motor_pair, runloop, color, color_sensor",
+        "",
+        "# 동작 모터를 C+D로 정하기",
+        "motor_pair.pair(motor_pair.PAIR_1, port.C, port.D)",
+        "",
+        "# 동작 시작하기 함수(기본값 : 방향=0, 속도=500)",
+        "async def move(dir=0, vel=500):",
+        "  motor_pair.move(motor_pair.PAIR_1, dir, velocity=vel)",
+        "",
+        "# cm만큼 움직이기 함수(기본값 : 속도=500)",
+        "async def move_cm(cm, vel=500):",
+        "  await motor_pair.move_for_degrees(motor_pair.PAIR_1, int(cm/17.5*360), 0, velocity=vel)",
+        "",
+        "# 90도 우회전 함수(기본값 : 속도=500)",
+        "async def turn_right(vel=500):",
+        "  await motor_pair.move_for_degrees(motor_pair.PAIR_1, 180, 100, velocity=vel)",
+        "",
+        "# 90도 좌회전 함수(기본값 : 속도=500)",
+        "async def turn_left(vel=500):",
+        "  await motor_pair.move_for_degrees(motor_pair.PAIR_1, -180, 100, velocity=vel)",
+        "",
+        "# 선 따라가기 함수(기본값 : 정지=GREEN, 회전각=30, 마무리 전진=12)",
+        "async def line_trace(target_color=color.GREEN, dir=30, end=12):",
+        "  while color_sensor.color(port.A) != target_color:",
+        "    if color_sensor.color(port.A) == color.WHITE:",
+        "      motor_pair.move(motor_pair.PAIR_1, dir, velocity=300)",
+        "    else:",
+        "      motor_pair.move(motor_pair.PAIR_1, -dir, velocity=300)",
+        "  await move_cm(end)",
+        "############################ 준비작업 끝 ############################",
+        "",
+        "# 프로그램이 시작될 때",
+        "async def main():",
+        "",
+        "  # 여기에 코드를 작성하세요.",
+        "  pass",
+        "runloop.run(main())"
+      ],
+      "links": []
+    },
+    {
+      "title": "붙임3 피지컬 AI 만들기 단계 사진 및 설명",
+      "summary": "피지컬 AI 만들기 중 안전 지도: 레고 스파이크 프라임 로봇을 다룰 때 USB 케이블은 뺀 상태에서 진행하도록 하며 허스키렌즈는 케이스가 따로 없으므로 뾰족한 부분에 손을 다치지 않도록 지도합니다. 만들기 8단계(사진 10장, 한양대학교 사범대학 부속고등학교 제공): 1 하부 뭉치 - 모터와 프레임에 핀(12개)과 축(2개)을 끼웁니다. / 2 빔과 컬러 센서 - 허브와 캐스터 뭉치 결합 후, 빔과 컬러 센서를 준비하고 핀(2개)을 끼웁니다. / 3 모터 연결 - 양쪽 모터 사이 공간을 통해 뒤로 이동 후, 선을 크로스하여 C, D 포트에 연결합니다. / 4 허브와 캐스터 뭉치 - 하부 부품 결합 후, 허브와 캐스터 부품을 준비하고 핀(4개)을 끼웁니다. / 5 허브 뭉치와 하부 뭉치 결합 - 허브 뭉치와 하부 뭉치, 빔과 컬러 센서 결합 후, 추가 부품을 준비합니다. / 6 컬러 센서 연결 - 양쪽 모터 사이 공간을 통해 뒤로 이동 후, B 포트에 연결합니다. / 7 초음파 센서 뭉치 - 초음파 센서와 빔, 핀(4개)을 준비합니다. / 8 초음파 센서 연결 - 양쪽 모터 사이 공간을 통해 뒤로 이동 후 F 포트에 연결하세요. / 9 초음파 센서 부착 - 핀을 끼운 빔을 이용하여 허브의 앞면에 초음파 센서를 부착합니다. / 10 완성 - 선이 바퀴에 걸리지 않도록 잘 정리합니다.",
+      "links": []
+    }
+  ],
+  "assessment": {
+    "self": ["로봇이 회전하고 이동할 때마다 방향과 좌표 값 확인", "목적지를 제시하고 제대로 찾아가는지 테스트"],
+    "peer": ["소프트웨어 담당·하드웨어 담당이 협력하여 로봇의 실제 움직임을 관찰하고 코드 수정"],
+    "teacher": ["버튼으로 목적지를 입력하면서 제대로 찾아가는지 테스트", "버튼으로 목적지를 입력하면서 허스키렌즈의 인식 결과가 반영되는지 테스트", "단순히 코드를 따라서 작성해보기보다는 목적을 구현해나가는 과정을 이해하는 것에 중점"]
+  },
+  "keyBlocks": [
+    "from hub import port, sound, button, light_matrix",
+    "import motor_pair, runloop, color, color_sensor",
+    "motor_pair.pair(motor_pair.PAIR_1, port.C, port.D)",
+    "motor_pair.move(motor_pair.PAIR_1, dir, velocity=vel)",
+    "await motor_pair.move_for_degrees(motor_pair.PAIR_1, int(cm/17.5*360), 0, velocity=vel)",
+    "await motor_pair.move_for_degrees(motor_pair.PAIR_1, 180, 100, velocity=vel)",
+    "await motor_pair.move_for_degrees(motor_pair.PAIR_1, -180, 100, velocity=vel)",
+    "motor_pair.stop(motor_pair.PAIR_1)",
+    "color_sensor.color(port.A)",
+    "color_sensor.color(port.B)",
+    "color_sensor.reflection(port.A)",
+    "color.GREEN",
+    "color.WHITE",
+    "color.BLACK",
+    "light_matrix.write(str(pos))",
+    "button.pressed(button.RIGHT)",
+    "button.pressed(button.LEFT)",
+    "runloop.run(main())",
+    "async def main():",
+    "global pos, heading",
+    "heading = (heading + 3) % 12",
+    "await line_trace()",
+    "await turn_right()",
+    "await turn_left()",
+    "await line_heading(0)",
+    "await router(9)",
+    "await input_target()",
+    "await takeoff()",
+    "await landing()",
+    "await move_cm(20)"
+  ],
+  "sensorsUsed": ["컬러 센서(port.A / port.B)", "초음파 센서(거리 센서, F 포트)", "허스키 렌즈(AI 카메라)", "허브 버튼(왼쪽/오른쪽)"],
+  "aiUsed": ["허스키 렌즈 물체 분류(이미지 분류) - 정지 표지판, 어린이보호구역 표지판, 공사중 신호 인식"],
+  "safety": [
+    "레고 스파이크 프라임 로봇을 다룰 때 USB 케이블은 뺀 상태에서 진행하도록 하며 허스키렌즈는 케이스가 따로 없으므로 뾰족한 부분에 손을 다치지 않도록 지도합니다.",
+    "허스키렌즈의 설치 위치나 각도가 바뀌지 않도록 유의시키고, 미션매트 주변 환경 변화에 유의"
+  ],
+  "extensions": [
+    "4~9번 노드의 라우팅 테이블을 직접 만들어보기",
+    "실제 로봇이나 자동차가 목적지를 찾는 방법(각종 길찾기 알고리즘, 자동차 내비게이션, GPS) 탐구",
+    "자율주행 자동차나 생성형 인공지능의 인터페이스 생각해보기",
+    "추가로 적용해보고 싶은 AI 기술 찾아보기",
+    "물체 분류를 활용한 미션 설계하기"
+  ],
+  "notes": "PDF 165쪽 챕터 표지, 166-180쪽 본문(책 페이지 22-36). 레벨은 '중급'으로 표기됨. 설계흐름 표의 '학습요소' 열은 4개 차시를 아우르는 'AI' 열과 각 차시별 요소로 구성되어 stage에 'AI / ...' 형태로 합쳐 기록. 3차시(Application) 탐구질문·학습목표·학습주제 및 전개의 자료·유의점은 원문이 초급 3차시(주차 문제, 차단기)의 내용을 그대로 싣고 있어 그대로 옮김. 4차시 탐구질문('원하는 사람의 얼굴을 AI에게 훈련시키기') 역시 원문 그대로. 파이썬 코드에서 '…'로 생략된 부분은 책에 그대로 생략 표기됨(1차시 ③ line_trace 코드는 책에서 인자와 while 조건이 '…'로 잘려 있음). 붙임1 링크 표의 연번은 1, 2, 4로 인쇄되어 있으며 3번은 없음. 미션 매트 그림 속 미션 이름(색상 연주, 미로 라운드, 터널 주행, 고가도로 주행, 장애물 감지, 변속 주행)은 작은 글씨로 일부 판독이 불확실함. 붙임3 사진 캡션은 '한양대학교 사범대학 부속고등학교' 로고가 찍힌 카드 형식으로, 작은 글씨를 확대하여 판독함. 4차시 예시 코드는 line_trace 기본값 end=13이지만 뼈대코드는 end=12로 인쇄됨(원문 유지). 4차시 예시 코드는 컬러 센서가 port.B, 허스키렌즈 값이 color_sensor.reflection(port.A)로 읽히는 형태로 인쇄됨(원문 유지)."
+}

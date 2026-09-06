@@ -27,3 +27,8 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# 업그레이드 작업 임시 파일
+_old/
+_upgrade_v2.tgz
+_upgrade_v2_delta.tgz
