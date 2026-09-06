@@ -1,48 +1,73 @@
-import React, { useState } from 'react';
-import { Link2, Image as ImageIcon, Check, Copy, Download, Printer } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Link2, Check, Copy, Download, Printer, Share2, MessageCircle } from 'lucide-react';
 import { encodeShare, shareUrl, copyText, renderCard, downloadBlob, copyBlob } from '../lib/share.js';
 
-/** 결과 공유 도구 — 링크 복사 / 이미지 카드 저장·복사 / 인쇄 */
+/** 공유 패널 — 카드 미리보기를 바로 보여주고, 링크·이미지·인쇄 버튼을 큼직하게 */
 export default function ShareBar({ result, level }) {
   const [state, setState] = useState({});
-  const flash = (k, v) => { setState((s) => ({ ...s, [k]: v })); setTimeout(() => setState((s) => ({ ...s, [k]: null })), 2200); };
+  const [card, setCard] = useState({ url: '', blob: null });
+  const flash = (k, v) => { setState((s) => ({ ...s, [k]: v })); setTimeout(() => setState((s) => ({ ...s, [k]: null })), 2400); };
+
+  // 결과·단계가 바뀔 때마다 카드를 미리 그려 둔다(사용자는 즉시 확인)
+  useEffect(() => {
+    let alive = true; let url = '';
+    renderCard(result, level).then((blob) => { if (!alive || !blob) return; url = URL.createObjectURL(blob); setCard({ url, blob }); }).catch((e) => console.warn('카드 생성 실패', e));
+    return () => { alive = false; if (url) URL.revokeObjectURL(url); };
+  }, [result.title, result.platformKey, level, result.levels]);
 
   const copyLink = async () => {
     setState((s) => ({ ...s, link: 'busy' }));
     try {
       const code = await encodeShare(result); const url = shareUrl(code);
       const ok = await copyText(url);
-      flash('link', ok ? `복사됨 · ${Math.round(url.length / 1000)}KB` : '복사 실패');
+      flash('link', ok ? '링크 복사됨!' : '복사 실패');
       if (!ok) window.prompt('아래 링크를 복사하세요', url);
     } catch (e) { flash('link', '실패'); console.warn(e); }
   };
-  const saveCard = async () => {
-    setState((s) => ({ ...s, card: 'busy' }));
-    try { const blob = await renderCard(result, level); downloadBlob(blob, `코드커넥트_${(result.title || '설계').replace(/[\\/:*?"<>|]/g, '')}.png`); flash('card', '저장됨'); }
-    catch (e) { flash('card', '실패'); console.warn(e); }
+  const getBlob = async () => card.blob || renderCard(result, level);
+  const saveCard = async () => { try { downloadBlob(await getBlob(), `코드커넥트_${(result.title || '설계').replace(/[\\/:*?"<>|]/g, '')}.png`); flash('card', '저장됨!'); } catch (e) { flash('card', '실패'); console.warn(e); } };
+  const copyCard = async () => { try { const ok = await copyBlob(await getBlob()); flash('cardCopy', ok ? '복사됨! 카톡에 붙여넣기' : '이 브라우저는 미지원 → 저장 이용'); } catch (e) { flash('cardCopy', '실패'); console.warn(e); } };
+  const shareNative = async () => {
+    try {
+      const code = await encodeShare(result); const url = shareUrl(code);
+      const blob = await getBlob(); const file = blob ? new File([blob], 'code-connect.png', { type: 'image/png' }) : null;
+      const data = { title: `피지컬 AI 코드 커넥트 — ${result.title}`, text: `“${result.title}” 설계를 확인해 보세요`, url };
+      if (file && navigator.canShare?.({ files: [file] })) await navigator.share({ ...data, files: [file] }); else await navigator.share(data);
+    } catch (e) { if (e?.name !== 'AbortError') console.warn(e); }
   };
-  const copyCard = async () => {
-    setState((s) => ({ ...s, cardCopy: 'busy' }));
-    try { const blob = await renderCard(result, level); const ok = await copyBlob(blob); flash('cardCopy', ok ? '복사됨 · 카톡에 붙이기' : '이 브라우저는 복사 미지원'); }
-    catch (e) { flash('cardCopy', '실패'); console.warn(e); }
-  };
-  const Btn = ({ k, icon: I, label, onClick, primary }) => {
-    const st = state[k]; const busy = st === 'busy';
+  const canNative = typeof navigator !== 'undefined' && !!navigator.share;
+
+  const Btn = ({ k, icon: I, label, sub, onClick, primary }) => {
+    const st = state[k]; const done = st && st !== 'busy';
     return (
-      <button onClick={onClick} disabled={busy} className="chip hover:brightness-110 disabled:opacity-60 !py-1.5 !px-3" style={primary ? { background: '#0b1220', color: '#fff', borderColor: 'transparent' } : { background: '#fff' }}>
-        {st && !busy ? <Check className="w-3.5 h-3.5" style={{ color: primary ? '#a3e635' : '#10b981' }} /> : <I className={`w-3.5 h-3.5 ${busy ? 'animate-pulse' : ''}`} />}
-        {st && !busy ? st : busy ? '만드는 중…' : label}
+      <button onClick={onClick} disabled={st === 'busy'} className="flex items-center gap-3 rounded-2xl px-4 py-3 text-left transition hover:-translate-y-0.5 disabled:opacity-60 w-full"
+        style={primary ? { background: 'linear-gradient(135deg,#8ad000,#22c55e)', color: '#06210b', boxShadow: '0 12px 30px -14px rgba(118,185,0,.9)' } : { background: 'rgba(255,255,255,.08)', color: '#fff', border: '1px solid rgba(255,255,255,.14)' }}>
+        <span className="w-9 h-9 rounded-xl grid place-items-center shrink-0" style={{ background: primary ? 'rgba(255,255,255,.35)' : 'rgba(255,255,255,.1)' }}>{done ? <Check className="w-5 h-5" /> : <I className="w-5 h-5" />}</span>
+        <span className="min-w-0"><span className="block font-black leading-tight">{done ? st : label}</span>{sub && <span className="block text-[11px] font-semibold opacity-75 mt-0.5">{sub}</span>}</span>
       </button>
     );
   };
+
   return (
-    <div className="flex flex-wrap items-center gap-2 no-print">
-      <span className="text-[11px] font-black tracking-widest text-slate-400 uppercase mr-1">공유</span>
-      <Btn k="link" icon={Link2} label="링크 복사" onClick={copyLink} primary />
-      <Btn k="card" icon={Download} label="이미지 카드 저장" onClick={saveCard} />
-      <Btn k="cardCopy" icon={Copy} label="이미지 복사" onClick={copyCard} />
-      <button onClick={() => window.print()} className="chip bg-white hover:bg-slate-100 !py-1.5 !px-3"><Printer className="w-3.5 h-3.5" /> 인쇄 · PDF</button>
-      <span className="text-[11px] text-slate-400 hidden md:inline">링크에는 설계 내용이 담겨 있어 받은 사람은 가입 없이 바로 봅니다.</span>
-    </div>
+    <section className="rounded-[28px] bg-[#0b1220] text-white p-5 md:p-6 relative overflow-hidden no-print">
+      <div className="aurora w-80 h-80 -right-24 -top-28" style={{ background: '#76b900', opacity: .3 }} />
+      <div className="relative grid lg:grid-cols-[1.25fr_1fr] gap-5 items-center">
+        <div>
+          <div className="flex items-center gap-2 text-[11px] font-black tracking-widest text-lime-300 uppercase"><Share2 className="w-3.5 h-3.5" /> 공유 카드</div>
+          <p className="mt-1 text-lg font-extrabold leading-snug">이 설계, 동학년 단톡방에 바로 보내세요.</p>
+          <p className="text-sm text-slate-300 mt-1">카드 이미지 + 링크를 같이 보내면 받은 선생님은 <b className="text-white">가입 없이</b> 같은 결과를 보고, “나도 설계”를 누를 수 있어요.</p>
+          <div className="mt-4 rounded-2xl overflow-hidden ring-1 ring-white/15 shadow-2xl bg-black/30 aspect-[1200/630]">
+            {card.url ? <img src={card.url} alt="공유 카드 미리보기" className="w-full h-full object-cover" /> : <div className="w-full h-full grid place-items-center text-sm font-bold text-slate-400">카드 만드는 중…</div>}
+          </div>
+        </div>
+        <div className="grid gap-2.5">
+          <Btn k="link" icon={Link2} label="링크 복사" sub="설계 전체가 담긴 링크 · 받은 사람은 바로 열림" onClick={copyLink} primary />
+          <Btn k="card" icon={Download} label="카드 이미지 저장" sub="PNG 1200×630 · 카톡·게시판용" onClick={saveCard} />
+          <Btn k="cardCopy" icon={Copy} label="카드 이미지 복사" sub="클립보드에 복사 → 카톡 창에 Ctrl+V" onClick={copyCard} />
+          {canNative && <Btn k="native" icon={MessageCircle} label="공유하기…" sub="카카오톡 등 앱으로 바로 보내기(모바일)" onClick={shareNative} />}
+          <button onClick={() => window.print()} className="flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold text-slate-300 hover:text-white hover:bg-white/5 transition"><Printer className="w-4 h-4" /> 인쇄 · PDF로 저장</button>
+        </div>
+      </div>
+    </section>
   );
 }

@@ -199,19 +199,23 @@ JSON 형식으로만 응답:
     {"key":"improving","title":"...","minutes":40,"activities":[...],"teacherTip":"..."}
   ],
   "algorithmFlow": ["① 센서 입력: ...", "② AI 인식: ...", "③ 판단: ...", "④ 출력: ..."],
-  "assessment": ["평가 관점 1(관찰/자기/동료 중 표기)", "..."],
-  "safety": ["안전 지도 1", "..."],
-  "extensions": ["확장 아이디어 1", "..."]
-}`;
+  "assessment": ["평가 관점 1(관찰/자기/동료 중 표기)", "평가 관점 2", "평가 관점 3"],
+  "safety": ["안전 지도 1", "안전 지도 2"],
+  "extensions": ["확장 아이디어 1", "확장 아이디어 2"]
+}
+각 문장은 짧게(활동은 15자 내외). 간결할수록 좋습니다.`;
 
   // 수업 흐름은 카탈로그가 필요 없어 짧은 시스템 프롬프트로 병렬 요청
   const planSystem = `당신은 서울특별시교육청 AI피지컬컴퓨팅융합교육연구회의 베테랑 초등 교사입니다. 초등 눈높이의 구체적인 활동으로 씁니다.\n${designPrinciples(hw.id)}`;
-  const planPromise = callGemini({ system: planSystem, prompt: planPrompt, temperature: 0.6, maxOutputTokens: 3000 })
-    .then((plan) => { if (onLessonPlan) onLessonPlan(plan); return plan; })
-    .catch((e) => { console.warn('수업 흐름 생성 실패', e); return null; });
+  let planState; // undefined = 진행 중, null = 실패, object = 완료
+  const planPromise = callGemini({ system: planSystem, prompt: planPrompt, temperature: 0.6, maxOutputTokens: 2200 })
+    .catch((e) => { console.warn('수업 흐름 생성 실패', e); return null; })
+    .then((plan) => { planState = plan; if (onLessonPlan) onLessonPlan(plan); return plan; });
 
   const raw = await callGemini({ system, prompt: corePrompt, temperature: 0.7, maxOutputTokens: 9000 });
   const result = await finalize(platformKey, raw, { system, idea });
+  // 수업 흐름이 먼저 도착해 있으면 바로 합친다(실패했으면 null → 기본 틀 사용)
+  if (planState !== undefined) { result.lessonPlan = planState; result.planFailed = planState === null; }
   // 캐시는 수업 흐름까지 도착한 뒤 저장(백그라운드)
   planPromise.then((plan) => { if (plan) cachePut(key, { ...result, lessonPlan: plan }); });
   return result;
