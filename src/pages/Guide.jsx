@@ -11,8 +11,8 @@ export default function Guide() {
         <div className="aurora w-[30rem] h-[30rem] -right-32 -top-32" style={{ background: '#38bdf8' }} />
         <div className="relative max-w-3xl">
           <span className="chip glass-dark text-lime-200 border-white/15"><Compass className="w-3.5 h-3.5" /> 연구회 수업 설계 프레임워크</span>
-          <h1 className="mt-5 text-4xl md:text-6xl font-black tracking-tight leading-[1.05]">피지컬 AI 융합 수업,<br /><span className="gradient-text">이 틀로 설계합니다.</span></h1>
-          <p className="mt-5 text-slate-300 text-lg leading-relaxed">서울특별시교육청 피지컬 AI 교육자료의 교수학습 설계 구조를 연구회 관점으로 정리한 틀입니다. 코드 커넥트의 모든 설계 결과(블록·코드·수업 흐름·평가)는 이 원리를 근거로 생성됩니다.</p>
+          <h1 className="mt-5 text-4xl md:text-6xl font-black tracking-tight leading-[1.05]">피지컬 AI 융합 수업,<br /><span className="gradient-text">이 구조로 설계합니다.</span></h1>
+          <p className="mt-5 text-slate-300 text-lg leading-relaxed">서울특별시교육청 피지컬 AI 교육자료의 교수학습 설계 원리를 연구회 관점으로 정리한 구조입니다. 코드 커넥트의 모든 설계 결과(블록·코드·수업 흐름·평가)는 이 원리를 근거로 생성됩니다.</p>
         </div>
       </section>
 
@@ -66,7 +66,7 @@ export default function Guide() {
         </div>
       </section>
 
-      <div className="text-center"><a href={href('/connect')} className="btn btn-primary text-base !px-7 !py-4"><Cpu className="w-5 h-5" /> 이 틀로 수업 설계 시작</a></div>
+      <div className="text-center"><a href={href('/connect')} className="btn btn-primary text-base !px-7 !py-4"><Cpu className="w-5 h-5" /> 이 구조로 수업 설계 시작</a></div>
     </div>
   );
 }
