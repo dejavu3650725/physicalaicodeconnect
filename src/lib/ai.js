@@ -23,6 +23,27 @@ export function aiMode() {
   return { mode: 'server', label: '서버 프록시(/api/gemini)' };
 }
 
+const API = 'https://generativelanguage.googleapis.com/v1beta';
+const MODEL_CACHE = 'pacc.geminiModel';
+export function getActiveModel() { try { return localStorage.getItem(MODEL_CACHE) || MODEL; } catch { return MODEL; } }
+
+/** models 목록에서 수업용으로 가장 적합한(빠르고 저렴한 최신 Flash) 모델을 고른다 — api/gemini.js 와 동일 규칙 */
+export function pickBestModel(models) {
+  const cand = (models || [])
+    .map((m) => (m.name || '').replace(/^models\//, ''))
+    .filter((n) => /^gemini-\d/.test(n))
+    .filter((n) => !/(embedding|tts|image|audio|live|vision|thinking|exp|preview|latest|robotics|computer-use)/i.test(n))
+    .filter((n) => { const m = (models || []).find((x) => (x.name || '').endsWith(n)); return !m?.supportedGenerationMethods || m.supportedGenerationMethods.includes('generateContent'); });
+  const score = (n) => {
+    const v = n.match(/gemini-(\d+)(?:\.(\d+))?/); const ver = v ? Number(v[1]) * 100 + Number(v[2] || 0) : 0;
+    const tier = /flash-lite/.test(n) ? 3 : /flash/.test(n) ? 2 : /pro/.test(n) ? 1 : 0;
+    const dated = /-\d{3,}$/.test(n) ? -1 : 0;
+    return ver * 10 + tier + dated * 0.5;
+  };
+  return cand.sort((a, b) => score(b) - score(a))[0] || null;
+}
+const modelGone = (status, text) => status === 404 || (status === 400 && /model|not found|not supported|deprecated/i.test(text));
+
 async function callGemini({ system, prompt, temperature = 0.6, maxOutputTokens = 8192 }) {
   const body = {
     contents: [{ role: 'user', parts: [{ text: prompt }] }],
@@ -31,11 +52,28 @@ async function callGemini({ system, prompt, temperature = 0.6, maxOutputTokens =
     safetySettings: SAFETY_SETTINGS,
   };
   const localKey = getLocalApiKey() || import.meta.env.VITE_GEMINI_API_KEY;
-  const url = localKey
-    ? `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${localKey}`
-    : '/api/gemini';
-  const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(localKey ? body : { ...body, model: MODEL }) });
-  const text = await res.text();
+  let res, text;
+  if (localKey) {
+    // 개인 키 직접 호출 — 모델이 사라졌으면(404) 목록 API로 최신 Flash 모델을 찾아 자동 승계
+    const model = getActiveModel();
+    const call = (m) => fetch(`${API}/models/${m}:generateContent?key=${localKey}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    res = await call(model); text = await res.text();
+    if (!res.ok && modelGone(res.status, text)) {
+      try {
+        const lr = await fetch(`${API}/models?key=${localKey}&pageSize=200`);
+        const best = lr.ok ? pickBestModel((await lr.json()).models) : null;
+        if (best && best !== model) {
+          const r2 = await call(best); const t2 = await r2.text();
+          if (r2.ok) { try { localStorage.setItem(MODEL_CACHE, best); } catch { /* ignore */ } console.warn(`[gemini] 모델 자동 승계: ${model} → ${best}`); }
+          res = r2; text = t2;
+        }
+      } catch (e) { console.warn('모델 목록 조회 실패', e); }
+    }
+  } else {
+    res = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...body, model: MODEL }) });
+    text = await res.text();
+    const used = res.headers.get('X-Gemini-Model'); if (used) { try { sessionStorage.setItem('pacc.serverModel', used); } catch { /* ignore */ } }
+  }
   if (!res.ok) {
     let msg = text;
     try { msg = JSON.parse(text)?.error?.message || JSON.parse(text)?.error || text; } catch { /* raw */ }
@@ -44,6 +82,13 @@ async function callGemini({ system, prompt, temperature = 0.6, maxOutputTokens =
   const data = JSON.parse(text);
   const out = data?.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') || '';
   return parseJSON(out);
+}
+
+/** AI 설정 화면용: 서버/로컬에서 현재 사용 중인 모델 조회 */
+export async function fetchModelStatus() {
+  if (getLocalApiKey() || import.meta.env.VITE_GEMINI_API_KEY) return { preferred: MODEL, active: getActiveModel(), autoUpgraded: getActiveModel() !== MODEL, where: '브라우저' };
+  try { const r = await fetch('/api/gemini'); if (r.ok) return { ...(await r.json()), where: '서버' }; } catch { /* ignore */ }
+  return { preferred: MODEL, active: MODEL, autoUpgraded: false, where: '서버(확인 불가)' };
 }
 
 function parseJSON(raw) {

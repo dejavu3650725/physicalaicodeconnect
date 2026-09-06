@@ -45,6 +45,9 @@ npm run build
 2. 로컬 개발: `.env`에 `VITE_GEMINI_API_KEY=...` (번들에 포함되므로 배포 금지)
 3. **배포(권장)**: Vercel 프로젝트 → Environment Variables → `GEMINI_API_KEY` 등록 → 서버리스 함수 `api/gemini.js`가 프록시 (브라우저에 키 노출 없음). 모델은 `GEMINI_MODEL`(기본 `gemini-3.1-flash-lite`).
 
+### 모델 자동 승계
+설정된 모델이 구글에서 사라지거나(404) 지원 종료되면, 서버(및 개인 키 직접 호출)는 `models` 목록 API에서 **사용 가능한 최신 Flash 계열 모델**(Flash-Lite > Flash > Pro, 최신 버전 우선, 실험·미리보기·이미지·TTS 제외)을 자동으로 골라 재시도하고 캐시합니다. 현재 사용 중인 모델은 우상단 **AI 설정** 창 또는 `GET /api/gemini` 로 확인할 수 있습니다.
+
 ## 폴더 구조
 
 ```
