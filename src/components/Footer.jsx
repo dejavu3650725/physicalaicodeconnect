@@ -74,7 +74,7 @@ const PRIVACY = {
     { no: 7, title: '정보관리책임자', body: [
       `정보관리책임자: 금정민 (서울고덕초등학교)`,
       `소속: ${ORG}`,
-      `연락처: 서울고덕초등학교 02-427-0525`,
+      `문의: 서울고덕초등학교를 통해 정보관리책임자에게 문의할 수 있습니다.`,
     ] },
   ],
   addendum: [`본 방침은 ${EFFECTIVE}부터 시행합니다.`],
@@ -122,7 +122,7 @@ export default function Footer() {
   const [doc, setDoc] = useState(null);
   return (
     <footer className="mt-16 bg-[#0b1220] text-slate-300">
-      <div className="max-w-7xl mx-auto px-4 py-12 text-center">
+      <div className="max-w-7xl mx-auto px-4 py-12 flex flex-col items-center text-center">
         <div className="inline-flex items-center gap-2.5" translate="no">
           <span className="bg-gradient-to-tr from-[#76b900] to-[#22c55e] p-1.5 rounded-lg"><Bot className="w-4 h-4 text-white" /></span>
           <span className="font-black tracking-tight text-white">피지컬 AI <span className="text-lime-300">코드 커넥트</span></span>
@@ -133,7 +133,7 @@ export default function Footer() {
           <span className="text-slate-600">|</span>
           <button onClick={() => setDoc(PRIVACY)} className="hover:text-white underline-offset-4 hover:underline">개인정보처리방침</button>
         </div>
-        <p className="mt-4 text-xs text-slate-400">정보관리책임자: 금정민 · 서울고덕초등학교 (02-427-0525)</p>
+        <p className="mt-4 text-xs text-slate-400">정보관리책임자: 금정민</p>
         <p className="mt-1 text-xs text-slate-500">© 2026 서울고덕초등학교 금정민. All rights reserved.</p>
       </div>
       {doc && <LegalModal doc={doc} onClose={() => setDoc(null)} />}
