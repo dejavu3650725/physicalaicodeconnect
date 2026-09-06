@@ -71,13 +71,30 @@ export function designPrinciples(hardwareId) {
       if (p.extensions?.length) lines.push(`  확장: ${p.extensions.slice(0, 3).join('; ')}`);
     }
   }
+  if (hardwareId === 'tory' && KB.drone) {
+    const d = KB.drone;
+    lines.push('## 드론 원리·안전·비행 실습 지식(과학전시관 직무연수 자료 구조화)');
+    lines.push('조종 축: ' + d.control.map((c) => `${c.term}=${c.meaning}`).join(' / '));
+    lines.push('비행 원리: ' + d.flightPrinciple.join(' / '));
+    lines.push('안전 수칙: ' + d.safety.join(' / '));
+    lines.push('비행 전 점검: ' + d.preflight.join(' / '));
+    lines.push('실내 팁: ' + d.indoor.join(' / '));
+    lines.push('기본 비행 기술 순서: ' + d.progression.join(' → '));
+    lines.push('흔한 실수: ' + d.mistakes.join(' / '));
+    lines.push('SW 교육 접근: ' + d.swApproach.join(' / '));
+    lines.push('AI 융합 아이디어: ' + d.aiIdeas.map((a) => `${a.title}(${a.summary})`).join(' / '));
+    lines.push('토리드론 교재 진행 구조: ' + d.toryCurriculum.map((c) => `[${c.chapter}] ${c.topics.join('; ')}`).join(' || '));
+    lines.push('설계 규칙: 첫 블록은 센서 초기화, 이륙 후 2초 대기, 마지막은 반드시 착륙, % 정하기 사용 후 0으로 되돌리기, 배터리 20% 이하면 착륙, 실내 이동은 1m 이내.');
+  }
   return lines.join('\n');
 }
+
+export const DRONE = KB.drone;
 
 export const SAFETY_BY_HW = {
   hamster: ['로봇 충전 상태·동글 페어링 확인 후 시작', '책상 가장자리 낙하 주의(바닥 센서 실험은 매트 위에서)', '카메라 사용 시 얼굴 촬영·저장 동의와 개인정보 지도'],
   microbit: ['배터리 홀더 극성·단자 확인, 금속 물체와 접촉 금지', '손목 착용 시 스트랩 조임 정도 확인', '라디오 실습은 모둠별 그룹 번호를 달리해 혼선 방지'],
-  tory: ['프로펠러 안전망 장착·사람과 2m 이상 거리 유지', '고도 1.5m 이하, 무늬 있는 바닥에서 비행', '이상 시 즉시 착륙/정지, 배터리 과열·손상 점검'],
+  tory: ['조종자·현장 감독 2인 1조, 프로펠러 안전망 장착, 사람과 2m 이상 거리', '비행 전 점검: 배터리 잔량·프로펠러 상태·평평한 곳에서 센서 초기화', '실내 유휴 공간(체육관·빈 교실), 고도 1.5m 이하, 무늬 있는 바닥', '이상 시 즉시 착륙(공중 정지 블록은 추락), 배터리 20% 이하 착륙·과열 점검'],
   spike: ['모터 회전부에 손·머리카락 접근 금지', '허브 충전 중 케이블 분리 금지, 부품 분실 관리', '로봇팔·이동 실험은 바닥 또는 넓은 책상에서'],
 };
 

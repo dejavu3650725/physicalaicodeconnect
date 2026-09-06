@@ -10,7 +10,7 @@
 |---|---|---|---|
 | 햄스터 / 햄스터S (로보메이션) | 엔트리 | entryjs `block_hamster.js`, `block_hamster_s.js` 캡션 그대로 | 엔트리 파이썬(`Hamster.*`), roboid 파이썬 |
 | 마이크로비트 v2 스마트워치 세트 | 메이크코드 | makecode.microbit.org 한국어 UI 캡션(2026-09 확인) | MakeCode JavaScript / Python |
-| 토리 드론 (잇플) | 엔트리 | 같은 계열(바이로봇 코딩드론) 엔트리 공식 모듈 캡션 기준 ※화면과 다를 수 있음 | CodingRider 파이썬 |
+| 토리 드론 (잇플) | 엔트리(Entry_Alux) | 잇플 교재 『엔트리 인공지능과 함께하는 토리드론』 화면 표기 전사 | CodingRider 파이썬 |
 | 레고 스파이크 프라임 | 스파이크 앱 3.x | 교육청 자료집에 실린 워드블록 캡션 | SPIKE Python |
 
 ## 핵심 설계
@@ -69,7 +69,8 @@ src/lib/ai.js               Gemini 호출 · 프롬프트 · 검증/수정 체�
 ## 출처 및 유의
 
 - 설계 원리: 서울특별시교육청 피지컬 AI 교육자료의 교수학습 설계 구조를 내부 지식으로 활용(원문 미수록).
-- 블록 명칭: 엔트리(entrylabs/entryjs), MakeCode(makecode.microbit.org 한국어 UI), SPIKE 앱. 토리드론 블록은 동일 프로토콜 계열의 엔트리 공식 모듈을 기준으로 하였으므로 실제 화면과 차이가 있을 수 있습니다.
+- 블록 명칭: 엔트리(entrylabs/entryjs), MakeCode(makecode.microbit.org 한국어 UI), SPIKE 앱, 토리드론은 잇플 교재 화면 표기.
+- 드론 지식: 서울특별시교육청과학전시관 『드론의 원리와 비행실습 직무연수』 자료의 원리·안전·비행 실습 구조를 지식베이스(`knowledge.drone`)로 활용(원문 미수록).
 - 엔트리 인공지능 블록은 엔트리 파이썬(텍스트) 모드에서 지원되지 않으므로 코드 변환 시 주석으로 표시됩니다.
 
 ## 기술 스택

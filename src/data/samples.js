@@ -93,21 +93,21 @@ export const SAMPLES = {
     variables: [{ name: '비행거리', value: 0.5, desc: '한 변의 길이(m). 실내에서는 0.5m 이하로!' }, { name: '속도', value: 0.5, desc: '이동 속도(m/s)' }],
     levels: {
       basic: { goal: '이륙 → 앞으로 → 착륙, 안전한 순차 비행.', ctConcepts: ['순차', '안전'], tryThis: '착륙 전에 LED를 파랑 깜빡임으로 바꿔 "복귀 중" 신호를 만들어 보세요.',
-        explanation: '드론 코딩의 첫 규칙은 **이륙 → 동작 → 착륙**! 이륙 뒤 2초 기다려 안정되게 하고, **앞으로 0.5m** 이동한 뒤 **착륙**해요. 항상 프로펠러 안전망을 확인하고 사람과 거리를 두어야 해요.',
+        explanation: '드론 코딩의 첫 규칙은 **센서 초기화 → 이륙 → 동작 → 착륙**! 평평한 곳에서 센서를 초기화하고 이륙 뒤 2초 기다려 안정되게 한 뒤, **앞으로 0.5m** 이동한 뒤 **착륙**해요. 항상 프로펠러 안전망을 확인하고 사람과 거리를 두어야 해요.',
         blocks: [{ type: 'when_run_button_click', params: {}, children: [
-          { type: 'drone_light_color_select', params: { COLOR: 'GREEN', MODE: 'HOLD', INTERVAL: 100 } },
-          { type: 'drone_takeoff', params: {} }, { type: 'wait_second', params: { SEC: 2 } },
+          { type: 'drone_led_simple', params: { COLOR: 'GREEN', MODE: 'ON' } },
+          { type: 'drone_sensor_reset', params: {} }, { type: 'drone_takeoff', params: {} }, { type: 'wait_second', params: { SEC: 2 } },
           { type: 'drone_move_dir', params: { DIR: 'FORWARD', M: 0.5, V: 0.5 } }, { type: 'wait_second', params: { SEC: 2 } },
           { type: 'drone_landing', params: {} }] }] },
       standard: { goal: '반복으로 사각형 순찰 비행을 하고 센서 값을 확인해요.', ctConcepts: ['반복', '조건', '센서'], tryThis: '4번 반복을 3번으로 바꾸면 어떤 도형이 될까요?',
-        explanation: '**4번 반복하기** 안에 "앞으로 이동 → 시계 방향 90도 회전"을 넣으면 **사각형 순찰**! 이동 중 **바닥과의 거리**가 1.5m를 넘으면 너무 높은 것이니 LED를 빨강으로 경고해요.',
+        explanation: '**4번 반복하기** 안에 "앞으로 이동 → 시계 방향 90도 회전"을 넣으면 **사각형 순찰**! 비행 중 **배터리** 값이 20보다 작아지면 LED를 빨강 깜빡임으로 경고하고 착륙 준비!',
         blocks: [{ type: 'when_run_button_click', params: {}, children: [
           { type: 'set_variable', params: { VAR: '비행거리', VALUE: 0.5 } },
           { type: 'drone_takeoff', params: {} }, { type: 'wait_second', params: { SEC: 2 } },
           { type: 'repeat_basic', params: { N: 4 }, children: [
             { type: 'drone_move_dir', params: { DIR: 'FORWARD', M: { type: 'get_variable', params: { VAR: '비행거리' } }, V: 0.5 } },
             { type: 'drone_turn', params: { DIR: 'CW', DEG: 90, V: 45 } },
-            { type: '_if', params: { COND: cmp({ type: 'drone_value', params: { S: 'range_height' } }, 'GREATER', 1.5) }, children: [{ type: 'drone_light_color_select', params: { COLOR: 'RED', MODE: 'FLICKER', INTERVAL: 100 } }] },
+            { type: '_if', params: { COND: cmp({ type: 'drone_value', params: { S: 'battery' } }, 'LESS', 20) }, children: [{ type: 'drone_led_mode', params: { COLOR: 'RED', MODE: 'FLICKER', VAL: 200 } }] },
           ] },
           { type: 'drone_landing', params: {} }] }] },
       advanced: { goal: 'PC 카메라 손 인식 결과로 드론을 조종해요.', ctConcepts: ['인공지능 인식', '이벤트', '안전 설계'], tryThis: '"엄지 아래로"면 비상 착륙, "브이"면 LED 무지개가 켜지도록 확장해 보세요.',
@@ -117,9 +117,9 @@ export const SAMPLES = {
           { type: 'set_variable', params: { VAR: '비행중', VALUE: 0 } },
           { type: 'repeat_inf', params: {}, children: [
             { type: '_if', params: { COND: { type: 'boolean_and_or', params: { A: { type: 'ai_hand_gesture', params: { N: '1', G: 'open' } }, OP: 'AND', B: cmp({ type: 'get_variable', params: { VAR: '비행중' } }, 'EQUAL', 1) } } }, children: [
-              { type: 'drone_landing', params: {} }, { type: 'set_variable', params: { VAR: '비행중', VALUE: 0 } }, { type: 'drone_light_color_select', params: { COLOR: 'BLUE', MODE: 'HOLD', INTERVAL: 100 } }] },
+              { type: 'drone_landing', params: {} }, { type: 'set_variable', params: { VAR: '비행중', VALUE: 0 } }, { type: 'drone_led_simple', params: { COLOR: 'BLUE', MODE: 'ON' } }] },
             { type: '_if', params: { COND: { type: 'boolean_and_or', params: { A: { type: 'ai_hand_gesture', params: { N: '1', G: 'fist' } }, OP: 'AND', B: cmp({ type: 'get_variable', params: { VAR: '비행중' } }, 'EQUAL', 0) } } }, children: [
-              { type: 'drone_takeoff', params: {} }, { type: 'set_variable', params: { VAR: '비행중', VALUE: 1 } }, { type: 'drone_light_color_select', params: { COLOR: 'GREEN', MODE: 'HOLD', INTERVAL: 100 } }] },
+              { type: 'drone_takeoff', params: {} }, { type: 'set_variable', params: { VAR: '비행중', VALUE: 1 } }, { type: 'drone_led_simple', params: { COLOR: 'GREEN', MODE: 'ON' } }] },
             { type: 'wait_second', params: { SEC: 0.5 } },
           ] } ] }] },
     },

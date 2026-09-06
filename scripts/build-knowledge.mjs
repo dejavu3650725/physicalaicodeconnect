@@ -34,6 +34,29 @@ const stageModel = [
 const algorithmPattern = ['① 센서 데이터 수집 및 조건 확인', '② AI 인식/분류(이미지·음성·손 모양 등)', '③ 판단(조건·변수·신뢰도)', '④ 출력·동작(모터·LED·소리) 및 피드백'];
 const assessmentLenses = ['입력-판단-출력 흐름을 설명할 수 있는가', '센서 값·조건을 스스로 수정하며 동작을 개선했는가', 'AI 인식 결과와 신뢰도의 한계를 이해하고 보완했는가', '모둠 역할(프로젝트 매니저·엔지니어·AI 전문가)을 협력적으로 수행했는가', '실생활 문제와 연결하여 확장 아이디어를 제안했는가'];
 const roles = ['프로젝트 매니저(전체 관리·의사결정)', '엔지니어(하드웨어 연결·코딩)', 'AI 전문가(데이터 수집·모델 학습·윤리)'];
+// ---- 드론 지식 (과학전시관 직무연수 자료 + 잇플 토리드론 교재 구조) ----
+let drone = null;
+try {
+  const d = JSON.parse(fs.readFileSync('knowledge-source/drone/drone-training.json', 'utf8'));
+  const take = (arr, n, key) => (arr || []).slice(0, n).map((x) => (typeof x === 'string' ? short(x, 110) : key ? short(x[key], 110) : short(JSON.stringify(x), 110)));
+  drone = {
+    control: (d.principles?.quadcopterControl || []).map((c) => ({ term: c.term, meaning: short(c.meaning, 90) })),
+    flightPrinciple: take(d.principles?.flightPrinciple, 6),
+    safety: take(d.safety?.rules, 10), law: take(d.safety?.law, 6), preflight: take(d.safety?.preflightChecklist, 8), indoor: take(d.safety?.indoorTips, 6), battery: take(d.safety?.battery, 5),
+    skills: (d.flightPractice?.basicSkills || []).slice(0, 10).map((k) => ({ skill: k.skill, howTo: short(k.howTo, 90) })),
+    progression: take(d.flightPractice?.progression, 10), mistakes: take(d.flightPractice?.commonMistakes, 8),
+    swApproach: take(d.swEducation?.approach, 8), lessonIdeas: (d.swEducation?.lessonIdeas || []).slice(0, 10).map((l) => ({ title: l.title, summary: short(l.summary, 90) })),
+    aiIdeas: (d.ai?.ideas || []).slice(0, 8).map((l) => ({ title: l.title, summary: short(l.summary, 90) })),
+    assessment: take(d.assessment, 8),
+  };
+  // 토리드론 엔트리 교재 진행 구조(연구회 정리) — 프로젝트 순서 설계에 참고
+  drone.toryCurriculum = [
+    { chapter: '드론 코딩 시작하기', topics: ['드론 연결하기(Entry_Alux·토리드론 선택)', '해발고도 센서 값 읽어 말하기', 'LED 색·모드 바꾸기, 조종기 버저·진동', '조종기 버튼/조이스틱 값으로 게임 조종기 만들기'] },
+    { chapter: '코딩으로 드론 조종하기', topics: ['센서 초기화→이륙→착륙 기초, Roll/Pitch/Yaw/Throttle % 정하기·초 실행, m 이동·도 회전', '곡예비행: 사각형·지그재그·원·회오리(반복·변수)', '대답(묻고 기다리기)으로 방향 명령 함수 만들기', '키보드(방향키·WASD·숫자)로 조종, 속도 변수 20~80 제한', '마우스 좌표 범위로 피치·롤·쓰로틀 조종'] },
+    { chapter: '엔트리 인공지능 드론', topics: ['음성 인식(한국어 음성 인식하기 → 음성을 문자로 바꾼 값)으로 조종', '손 인식(1번째 손의 모양이 브이 사인인가?, 검지 끝 좌표)으로 조종', '신체 인식(1번째 사람의 왼쪽 손목 좌표)으로 범위 조종', '머신러닝(이미지 분류 모델) 결과로 이륙·착륙'] },
+  ];
+} catch (e) { console.warn('drone knowledge skipped', e.message); }
+
 fs.mkdirSync('src/data', { recursive: true });
-fs.writeFileSync('src/data/knowledge.json', JSON.stringify({ stageModel, algorithmPattern, assessmentLenses, roles, projects }, null, 1));
+fs.writeFileSync('src/data/knowledge.json', JSON.stringify({ stageModel, algorithmPattern, assessmentLenses, roles, projects, drone }, null, 1));
 console.log('projects', projects.length, 'bytes', fs.statSync('src/data/knowledge.json').size);
