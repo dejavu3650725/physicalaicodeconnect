@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowRight, Cpu, Plug, ShieldCheck, Blocks, Wand2, Sparkles, Route, Users, ClipboardCheck, Play, Bot } from 'lucide-react';
+import { ArrowRight, Cpu, Plug, ShieldCheck, Blocks, Wand2, Sparkles, Route, Users, ClipboardCheck, Compass, Bot } from 'lucide-react';
 import { HARDWARE } from '../data/hardware.js';
 import { href } from '../lib/router.js';
 import { SAMPLES } from '../data/samples.js';
@@ -169,7 +169,7 @@ export default function Home() {
             <h2 className="text-3xl md:text-5xl font-black tracking-tight mt-2">코드만 뽑는 게 아니라,<br />수업 흐름까지 설계합니다.</h2>
             <p className="text-slate-300 mt-5 text-lg leading-relaxed">서울특별시교육청 피지컬 AI 교육자료의 교수학습 설계 구조(4단계 흐름 · 센서→AI→판단→출력 알고리즘 패턴 · 모둠 역할 · 평가 관점)를 내부 지식으로 심어, 모든 설계 결과에 <b className="text-white">학교자율시간 차시 계획·평가·안전 지도</b>를 함께 제공합니다.</p>
             <div className="mt-6 flex flex-wrap gap-2">{ROLES.map((r) => <span key={r} className="chip glass-dark text-white border-white/15"><Users className="w-3.5 h-3.5" /> {r}</span>)}</div>
-            <a href={href('/connect')} className="btn btn-primary mt-8"><Play className="w-5 h-5" /> 설계 시작하기</a>
+            <a href={href('/guide')} className="btn btn-glass mt-8"><Compass className="w-5 h-5" /> 수업 설계 가이드 보기</a>
           </div>
           <div className="grid sm:grid-cols-2 gap-4">
             {STAGES.map((s, i) => (

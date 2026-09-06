@@ -136,7 +136,7 @@ export default function CodeConnect({ route }) {
           <div className="text-sm space-y-2">
             <p className="font-extrabold">AI 설계 중 문제가 생겼어요.</p>
             <p className="break-all">{error}</p>
-            <p className="text-rose-700">현재 AI 연결 모드: <b>{mode.label}</b>. 우상단 <b>AI 설정</b>에서 개인 Gemini API 키를 넣거나, 배포 서버 환경 변수(GEMINI_API_KEY)를 확인하세요. 우선 <button className="underline font-bold" onClick={showSample}>예시 설계 보기</button>로 화면을 확인할 수 있어요.</p>
+            <p className="text-rose-700">잠시 후 다시 시도해 주세요. (연결 모드: {mode.label}) 우선 <button className="underline font-bold" onClick={showSample}>예시 설계 보기</button>로 화면을 확인할 수 있어요.</p>
           </div>
         </div>
       )}
