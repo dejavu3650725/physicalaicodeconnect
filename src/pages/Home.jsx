@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ArrowRight, Cpu, Plug, ShieldCheck, Blocks, Wand2, Sparkles, Route, Users, ClipboardCheck, Play } from 'lucide-react';
+import { ArrowRight, Cpu, Plug, ShieldCheck, Blocks, Wand2, Sparkles, Route, Users, ClipboardCheck, Play, Bot } from 'lucide-react';
 import { HARDWARE } from '../data/hardware.js';
 import { href } from '../lib/router.js';
 import { SAMPLES } from '../data/samples.js';
@@ -38,32 +38,83 @@ function Showcase() {
   );
 }
 
+const NODE_POS = { hamster: [82, 14], microbit: [82, 38], tory: [82, 62], spike: [82, 86] };
+const HUB = [44, 50]; const IDEA = [8, 50];
+function curve([x1, y1], [x2, y2]) { const mx = (x1 + x2) / 2; return `M ${x1} ${y1} C ${mx} ${y1}, ${mx} ${y2}, ${x2} ${y2}`; }
+
+/** 정체성 비주얼: 아이디어 → 코드 커넥트 허브 → 4개 교구로 흐르는 연결 다이어그램 */
+function ConnectDiagram() {
+  const [active, setActive] = useState(0);
+  useEffect(() => { const t = setInterval(() => setActive((a) => (a + 1) % HARDWARE.length), 2600); return () => clearInterval(t); }, []);
+  return (
+    <div className="relative w-full aspect-[1.05] sm:aspect-[1.25] lg:aspect-[1.02] select-none">
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
+        <defs>
+          <linearGradient id="lineG" x1="0" x2="1"><stop offset="0" stopColor="#a3e635" /><stop offset="1" stopColor="#38bdf8" /></linearGradient>
+        </defs>
+        <path d={curve(IDEA, HUB)} fill="none" stroke="url(#lineG)" strokeWidth="1.2" vectorEffect="non-scaling-stroke" strokeOpacity=".9" strokeDasharray="3 3" className="dash-flow" />
+        {HARDWARE.map((h, i) => (
+          <g key={h.id}>
+            <path id={`p-${h.id}`} d={curve(HUB, NODE_POS[h.id])} fill="none" stroke={i === active ? h.color : 'rgba(255,255,255,.22)'} strokeWidth={i === active ? 2 : 1} vectorEffect="non-scaling-stroke" style={{ transition: 'stroke .5s' }} />
+            <circle r={i === active ? 1.6 : 0.9} fill={i === active ? '#fff' : h.color} style={{ filter: `drop-shadow(0 0 4px ${h.color})` }}>
+              <animateMotion dur={i === active ? '1.6s' : '3.2s'} repeatCount="indefinite" begin={`${i * 0.4}s`}><mpath href={`#p-${h.id}`} /></animateMotion>
+            </circle>
+          </g>
+        ))}
+      </svg>
+      {/* 아이디어 노드 */}
+      <div className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${IDEA[0]}%`, top: `${IDEA[1]}%` }}>
+        <div className="glass-dark rounded-2xl px-3.5 py-2.5 text-white text-xs font-extrabold whitespace-nowrap shadow-xl float">💬 “손으로 조종하는<br />배달 로봇 만들래요!”</div>
+      </div>
+      {/* 허브 */}
+      <div className="absolute -translate-x-1/2 -translate-y-1/2" style={{ left: `${HUB[0]}%`, top: `${HUB[1]}%` }}>
+        <div className="relative">
+          <div className="absolute inset-0 rounded-full bg-lime-400/40 blur-2xl animate-pulse" />
+          <div className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-full grid place-items-center bg-[#0b1220] ring shadow-2xl">
+            <div className="text-center"><Bot className="w-9 h-9 sm:w-11 sm:h-11 text-lime-300 mx-auto" /><div className="text-[10px] sm:text-[11px] font-black tracking-widest text-white mt-1">CODE</div><div className="text-[10px] sm:text-[11px] font-black tracking-widest gradient-text -mt-0.5">CONNECT</div></div>
+          </div>
+          <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 chip bg-white text-slate-900 border-transparent text-[10px] !py-0.5 whitespace-nowrap shadow">실제 블록 카탈로그 · AI 설계</span>
+        </div>
+      </div>
+      {/* 하드웨어 노드 */}
+      {HARDWARE.map((h, i) => (
+        <a key={h.id} href={href('/connect', { hw: h.id })} onMouseEnter={() => setActive(i)} className={`absolute -translate-y-1/2 -translate-x-1/2 flex items-center gap-3 rounded-2xl pl-2 pr-4 py-2 transition-all duration-500 ${i === active ? 'glass scale-105 shadow-2xl' : 'glass-dark hover:bg-white/10'}`} style={{ left: `${NODE_POS[h.id][0]}%`, top: `${NODE_POS[h.id][1]}%`, minWidth: '11.5rem' }}>
+          <span className="w-12 h-12 rounded-xl grid place-items-center text-2xl shrink-0 shadow-lg" style={{ background: h.gradient }}>{h.emoji}</span>
+          <span className="min-w-0"><span className={`block font-black text-sm leading-tight whitespace-nowrap ${i === active ? 'text-slate-900' : 'text-white'}`}>{h.name}</span><span className={`block text-[11px] font-bold whitespace-nowrap ${i === active ? 'text-slate-500' : 'text-slate-300'}`}>{h.tool} · {i === 0 ? '엔트리 파이썬·roboid' : i === 1 ? 'JS · Python' : i === 2 ? 'CodingRider' : 'SPIKE Python'}</span></span>
+        </a>
+      ))}
+    </div>
+  );
+}
+
 export default function Home() {
   return (
     <div className="space-y-24 pb-10">
       {/* HERO */}
-      <section className="hero rounded-[36px] -mt-4 px-6 md:px-14 pt-16 pb-20 md:pt-24 md:pb-28">
+      <section className="hero rounded-[36px] -mt-4 px-6 md:px-14 pt-14 pb-16 md:pt-20 md:pb-20">
         <div className="aurora w-[38rem] h-[38rem] -left-40 -top-56" style={{ background: '#76b900' }} />
         <div className="aurora w-[34rem] h-[34rem] right-[-8rem] top-[-6rem]" style={{ background: '#38bdf8', animationDelay: '-5s' }} />
         <div className="aurora w-[30rem] h-[30rem] left-1/2 bottom-[-14rem]" style={{ background: '#a855f7', animationDelay: '-9s' }} />
-        <div className="relative grid lg:grid-cols-[1.15fr_.85fr] gap-12 items-center">
+        <div className="relative grid lg:grid-cols-[.9fr_1.1fr] gap-10 lg:gap-6 items-center">
           <div className="fade-up">
             <span className="chip glass-dark text-lime-200 border-white/15"><Sparkles className="w-3.5 h-3.5" /> 서울특별시교육청 AI피지컬컴퓨팅융합교육연구회 · 학교자율시간 프로그램</span>
-            <h1 className="mt-6 text-[2.5rem] sm:text-5xl lg:text-[3.9rem] xl:text-[4.3rem] font-black leading-[1.06] tracking-tight [word-break:keep-all]">
-              아이디어를 말하면,<br /><span className="gradient-text">진짜 교구 블록</span>으로<br />수업이 설계됩니다.
-            </h1>
-            <p className="mt-7 text-slate-300 text-lg md:text-xl leading-relaxed max-w-xl [word-break:keep-all]">햄스터 · 마이크로비트 v2 스마트워치 · 토리 드론 · 레고 스파이크. 엔트리/메이크코드/스파이크 앱에 <b className="text-white">실제로 있는 블록만</b>으로 조립도를 만들고, 블록에서 코드를 자동 생성하고, 교육청 피지컬 AI 설계 원리로 <b className="text-white">4단계 수업 흐름</b>까지 뽑아냅니다.</p>
-            <div className="mt-9 flex flex-wrap gap-3">
+            <div className="mt-7 flex items-center gap-4">
+              <span className="w-16 h-16 rounded-[22px] grid place-items-center bg-gradient-to-tr from-[#76b900] to-[#22c55e] shadow-[0_20px_50px_-15px_rgba(118,185,0,.9)] ring"><Bot className="w-9 h-9 text-white" /></span>
+              <div><div className="text-[11px] font-black tracking-[.2em] text-lime-300">PHYSICAL AI CODE CONNECT</div><h1 className="text-[2.1rem] sm:text-5xl lg:text-[3.2rem] xl:text-[3.6rem] font-black leading-none tracking-tight whitespace-nowrap">피지컬 AI <span className="gradient-text">코드 커넥트</span></h1></div>
+            </div>
+            <p className="mt-7 text-2xl md:text-[1.75rem] font-extrabold leading-snug text-white [word-break:keep-all]">학생의 아이디어를 <span className="text-lime-300">진짜 교구 블록</span>으로<br className="hidden sm:block" /> 연결하는 피지컬 AI 융합 수업 설계 플랫폼</p>
+            <p className="mt-5 text-slate-300 text-lg leading-relaxed max-w-xl [word-break:keep-all]">햄스터봇 · 마이크로비트 v2 · 토리드론 · 레고 스파이크 프라임. 각 교구의 도구(엔트리·메이크코드·스파이크 앱)에 실제로 있는 블록만으로 조립도를 만들고, 코드와 4단계 수업 흐름까지 한 번에 설계합니다.</p>
+            <div className="mt-8 flex flex-wrap gap-3">
               <a href={href('/connect')} className="btn btn-primary text-base !px-6 !py-4"><Cpu className="w-5 h-5" /> 코드 커넥트 시작</a>
               <a href={href('/tutorial')} className="btn btn-glass text-base !px-6 !py-4"><Plug className="w-5 h-5" /> 교구 연결 튜토리얼</a>
             </div>
-            <div className="mt-12 grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {[['4', '교구 · 5개 도구 프로필'], ['368', '검증된 블록 카탈로그'], ['3', '기초·기본·심화 단계'], ['4', '단계 수업 흐름 자동 설계']].map(([n, l]) => (
-                <div key={l} className="glass-dark rounded-2xl p-4"><div className="stat text-3xl font-black text-white">{n}</div><div className="text-xs font-bold text-slate-300 mt-1">{l}</div></div>
+            <div className="mt-10 grid grid-cols-3 gap-3 max-w-md">
+              {[['368', '검증된 실제 블록'], ['3', '기초·기본·심화'], ['4', '단계 수업 흐름']].map(([n, l]) => (
+                <div key={l} className="glass-dark rounded-2xl px-4 py-3"><div className="stat text-2xl font-black text-white">{n}</div><div className="text-[11px] font-bold text-slate-300 mt-0.5">{l}</div></div>
               ))}
             </div>
           </div>
-          <div className="fade-up" style={{ animationDelay: '.15s' }}><Showcase /></div>
+          <div className="fade-up" style={{ animationDelay: '.15s' }}><ConnectDiagram /></div>
         </div>
       </section>
 
