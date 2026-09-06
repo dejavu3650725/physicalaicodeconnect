@@ -66,13 +66,15 @@ export default function ResultView({ hardware, platformKey, result, onFeedback, 
               return (
                 <button key={L.key} role="tab" aria-selected={on} onClick={() => setLevel(L.key)}
                   className={`level-tab text-left ${on ? 'on' : ''}`}
-                  style={on ? { borderColor: L.color, background: `linear-gradient(135deg, ${L.soft}, #fff 70%)`, boxShadow: `0 14px 30px -18px ${L.color}` } : {}}>
+                  style={on
+                    ? { borderColor: L.color, background: `linear-gradient(135deg, ${L.color}, ${L.color}cc)`, boxShadow: `0 18px 34px -16px ${L.color}`, color: '#fff' }
+                    : { borderColor: L.color + '55', background: `linear-gradient(135deg, ${L.soft}, #fff 75%)` }}>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="flex items-center gap-1.5 text-[11px] font-black" style={{ color: on ? L.color : '#94a3b8' }}><span className="w-5 h-5 rounded-full grid place-items-center text-white text-[10px]" style={{ background: on ? L.color : '#cbd5e1' }}>{i + 1}</span>STEP {i + 1}</span>
-                    <span className="text-[11px] font-bold text-slate-400 hidden sm:inline">{n} 블록</span>
+                    <span className="flex items-center gap-1.5 text-[11px] font-black" style={{ color: on ? 'rgba(255,255,255,.9)' : L.color }}><span className="w-5 h-5 rounded-full grid place-items-center text-[10px] font-black" style={{ background: on ? '#fff' : L.color, color: on ? L.color : '#fff' }}>{i + 1}</span>STEP {i + 1}</span>
+                    <span className="text-[11px] font-bold hidden sm:inline" style={{ color: on ? 'rgba(255,255,255,.85)' : '#64748b' }}>{n} 블록</span>
                   </div>
-                  <div className="mt-2 flex items-center gap-1.5 text-lg md:text-xl font-black" style={{ color: on ? '#0f172a' : '#475569' }}><span>{L.emoji}</span>{L.name}<span className="text-xs md:text-sm font-bold text-slate-500">· {L.sub}</span></div>
-                  <p className="text-[12px] text-slate-500 mt-1 leading-snug hidden md:block">{L.desc}</p>
+                  <div className="mt-2 flex items-center gap-1.5 text-lg md:text-xl font-black" style={{ color: on ? '#fff' : '#0f172a' }}><span>{L.emoji}</span>{L.name}<span className="text-xs md:text-sm font-bold" style={{ color: on ? 'rgba(255,255,255,.85)' : L.color }}>· {L.sub}</span></div>
+                  <p className="text-[12px] mt-1 leading-snug hidden md:block" style={{ color: on ? 'rgba(255,255,255,.85)' : '#64748b' }}>{L.desc}</p>
                 </button>
               );
             })}

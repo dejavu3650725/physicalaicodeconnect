@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Bot, Sparkles, Plug, AlertTriangle, Eye, Info, LayoutTemplate } from 'lucide-react';
 import { HARDWARE, HARDWARE_MAP } from '../data/hardware.js';
 import { TEMPLATES } from '../lib/knowledge.js';
@@ -24,6 +24,8 @@ export default function CodeConnect({ route }) {
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
   const [showAdv, setShowAdv] = useState(false);
+  const resultRef = useRef(null);
+  useEffect(() => { if (result && resultRef.current) setTimeout(() => resultRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80); }, [result?.title, result?.sample]);
 
   useEffect(() => { setPlatformKey(HARDWARE_MAP[hwId].defaultPlatform); }, [hwId]);
   useEffect(() => { if (!busy) return; const t = setInterval(() => setMsgIdx((i) => (i + 1) % LOADING_MSGS.length), 1400); return () => clearInterval(t); }, [busy]);
@@ -112,7 +114,7 @@ export default function CodeConnect({ route }) {
             </div>
             {showAdv && <input className="input text-sm" value={extra} onChange={(e) => setExtra(e.target.value)} placeholder="예: 4학년, 2인 1조, 40분 2차시, 센서는 근접 센서만 사용, 변수 이름은 한글로" />}
           </div>
-          <SpecCard hw={hw} compact />
+          <SpecCard hw={hw} compact collapsible />
         </div>
       </section>
 
@@ -142,11 +144,13 @@ export default function CodeConnect({ route }) {
       )}
 
       {result && !busy && (
+        <div ref={resultRef} className="scroll-mt-20">
         <ResultView
           hardware={HARDWARE_MAP[result.hwId]} platformKey={result.platformKey} result={result}
           onFeedback={result.sample ? undefined : onFeedback} onApplyFeedback={applyFeedback} busyFeedback={busyFb}
           variantOptions={HARDWARE_MAP[result.hwId].variants} onSwapVariant={swapVariant}
         />
+        </div>
       )}
       {result?.sample && <p className="text-xs text-center text-slate-400 no-print">※ 예시 설계는 AI 호출 없이 내장된 데이터로 표시됩니다. 아이디어를 입력해 설계하면 피드백 기능도 사용할 수 있어요.</p>}
     </div>

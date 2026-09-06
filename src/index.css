@@ -139,5 +139,5 @@
 
 /* 수준별 단계 탭 */
 .level-tab { border: 2px solid var(--line); background: #fff; border-radius: 18px; padding: .8rem .95rem; transition: all .2s cubic-bezier(.2, .8, .2, 1); cursor: pointer; }
-.level-tab:hover { border-color: #cbd5e1; transform: translateY(-1px); }
+.level-tab:hover { transform: translateY(-2px); filter: saturate(1.15); }
 .level-tab.on { transform: translateY(-2px); }
