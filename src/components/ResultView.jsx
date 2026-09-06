@@ -56,10 +56,26 @@ export default function ResultView({ hardware, platformKey, result, onFeedback, 
             <h2 className="text-2xl md:text-3xl font-black tracking-tight">“{result.title}”</h2>
             <p className="text-slate-600 mt-2 font-medium leading-relaxed">{result.summary}</p>
           </div>
-          <div className="seg shrink-0 self-start">
-            {LEVELS.map((L) => (
-              <button key={L.key} className={level === L.key ? 'on' : ''} onClick={() => setLevel(L.key)} title={L.desc}>{L.emoji} {L.name}</button>
-            ))}
+        </div>
+        {/* 수준별 단계 선택 — 수준별 수업의 핵심 */}
+        <div className="relative mt-6">
+          <div className="flex items-center gap-2 mb-2"><span className="text-[11px] font-black tracking-widest text-slate-400 uppercase">수준별 단계 선택</span><span className="text-[11px] font-bold text-slate-400">· 학생 수준에 맞는 단계를 고르면 블록·코드·수업 흐름이 함께 바뀝니다</span></div>
+          <div className="grid grid-cols-3 gap-2 md:gap-3" role="tablist">
+            {LEVELS.map((L, i) => {
+              const on = level === L.key; const n = countBlocks(result.levels[L.key]?.blocks || []);
+              return (
+                <button key={L.key} role="tab" aria-selected={on} onClick={() => setLevel(L.key)}
+                  className={`level-tab text-left ${on ? 'on' : ''}`}
+                  style={on ? { borderColor: L.color, background: `linear-gradient(135deg, ${L.soft}, #fff 70%)`, boxShadow: `0 14px 30px -18px ${L.color}` } : {}}>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5 text-[11px] font-black" style={{ color: on ? L.color : '#94a3b8' }}><span className="w-5 h-5 rounded-full grid place-items-center text-white text-[10px]" style={{ background: on ? L.color : '#cbd5e1' }}>{i + 1}</span>STEP {i + 1}</span>
+                    <span className="text-[11px] font-bold text-slate-400 hidden sm:inline">{n} 블록</span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-1.5 text-lg md:text-xl font-black" style={{ color: on ? '#0f172a' : '#475569' }}><span>{L.emoji}</span>{L.name}<span className="text-xs md:text-sm font-bold text-slate-500">· {L.sub}</span></div>
+                  <p className="text-[12px] text-slate-500 mt-1 leading-snug hidden md:block">{L.desc}</p>
+                </button>
+              );
+            })}
           </div>
         </div>
         {result.edgeCase && (
@@ -68,10 +84,10 @@ export default function ResultView({ hardware, platformKey, result, onFeedback, 
             <div><b className="text-amber-800">하드웨어 한계 돌파!</b> <span className="text-amber-900">"{result.edgeCase.wish}" → {result.edgeCase.workaround}</span></div>
           </div>
         )}
-        <div className="relative mt-5 flex flex-wrap items-center gap-2 text-sm">
-          <span className="font-extrabold text-slate-700">{LEVELS.find((l) => l.key === level)?.full}</span>
-          <span className="text-slate-500">· {lv.goal}</span>
-          <span className="ml-auto chip">{countBlocks(lv.blocks)} 블록</span>
+        <div className="relative mt-3 flex flex-wrap items-center gap-2 text-sm rounded-xl px-4 py-2.5" style={{ background: LEVELS.find((l) => l.key === level)?.soft }}>
+          <span className="font-extrabold" style={{ color: LEVELS.find((l) => l.key === level)?.color }}>{LEVELS.find((l) => l.key === level)?.full} 목표</span>
+          <span className="text-slate-700">{lv.goal}</span>
+          <span className="ml-auto chip bg-white">{countBlocks(lv.blocks)} 블록</span>
         </div>
       </div>
 

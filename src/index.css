@@ -136,3 +136,8 @@
 
 @media (prefers-reduced-motion: reduce) { .aurora, .float, .marquee, .fade-up, .pop, .bk-anim > * { animation: none !important; } }
 @media print { nav, .no-print { display: none !important; } body { background: white; } .card { box-shadow: none; } }
+
+/* 수준별 단계 탭 */
+.level-tab { border: 2px solid var(--line); background: #fff; border-radius: 18px; padding: .8rem .95rem; transition: all .2s cubic-bezier(.2, .8, .2, 1); cursor: pointer; }
+.level-tab:hover { border-color: #cbd5e1; transform: translateY(-1px); }
+.level-tab.on { transform: translateY(-2px); }

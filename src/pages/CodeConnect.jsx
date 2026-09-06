@@ -7,6 +7,7 @@ import { designProject, feedbackAndUpdate, aiMode } from '../lib/ai.js';
 import { normalizeTree } from '../blocks/engine.js';
 import ResultView from '../components/ResultView.jsx';
 import { href } from '../lib/router.js';
+import SpecCard from '../components/SpecCard.jsx';
 
 const LOADING_MSGS = ['교구 사양서를 펼치는 중…', '카탈로그에서 실제 블록만 고르는 중…', '기초·기본·심화 3단계로 나누는 중…', '선생님 해설을 쓰는 중…', '블록에서 텍스트 코드를 변환하는 중…'];
 
@@ -111,13 +112,7 @@ export default function CodeConnect({ route }) {
             </div>
             {showAdv && <input className="input text-sm" value={extra} onChange={(e) => setExtra(e.target.value)} placeholder="예: 4학년, 2인 1조, 40분 2차시, 센서는 근접 센서만 사용, 변수 이름은 한글로" />}
           </div>
-          <aside className="rounded-2xl bg-slate-50 border border-slate-200 p-4 text-sm space-y-3">
-            <div className="flex items-center justify-between"><b className="text-slate-800">{hw.emoji} {hw.name} 사양 카드</b><a href={href('/tutorial/' + hw.tutorial)} className="chip hover:bg-slate-200"><Plug className="w-3.5 h-3.5" /> 연결 튜토리얼</a></div>
-            <div><span className="text-[11px] font-black text-slate-400">센서</span><p className="text-slate-700 leading-snug">{hw.sensors.join(' · ')}</p></div>
-            <div><span className="text-[11px] font-black text-slate-400">출력</span><p className="text-slate-700 leading-snug">{hw.actuators.join(' · ')}</p></div>
-            <div><span className="text-[11px] font-black text-slate-400">AI 융합 방법</span><p className="text-slate-700 leading-snug">{hw.aiHow}</p></div>
-            {hw.caution && <div className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg p-2 flex gap-1.5"><Info className="w-4 h-4 shrink-0" />{hw.caution}</div>}
-          </aside>
+          <SpecCard hw={hw} compact />
         </div>
       </section>
 
