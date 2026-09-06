@@ -3,8 +3,9 @@ import { Bot, Sparkles, Plug, AlertTriangle, Eye, Info, LayoutTemplate } from 'l
 import { HARDWARE, HARDWARE_MAP } from '../data/hardware.js';
 import { TEMPLATES } from '../lib/knowledge.js';
 import { SAMPLES } from '../data/samples.js';
-import { designProject, feedbackAndUpdate, aiMode } from '../lib/ai.js';
+import { designProject, feedbackAndUpdate, regenerateLevel, aiMode } from '../lib/ai.js';
 import { normalizeTree } from '../blocks/engine.js';
+import { checkLevels } from '../lib/levelRules.js';
 import ResultView from '../components/ResultView.jsx';
 import { href } from '../lib/router.js';
 import SpecCard from '../components/SpecCard.jsx';
@@ -20,6 +21,7 @@ export default function CodeConnect({ route }) {
   const [extra, setExtra] = useState('');
   const [busy, setBusy] = useState(false);
   const [busyFb, setBusyFb] = useState(false);
+  const [busyLevel, setBusyLevel] = useState(null);
   const [msgIdx, setMsgIdx] = useState(0);
   const [error, setError] = useState('');
   const [result, setResult] = useState(null);
@@ -46,7 +48,8 @@ export default function CodeConnect({ route }) {
     const s = SAMPLES[hwId];
     const levels = {};
     for (const k of Object.keys(s.levels)) { const issues = []; levels[k] = { ...s.levels[k], blocks: normalizeTree(s.platformKey, s.levels[k].blocks, issues), issues }; }
-    setResult({ ...s, levels, hwId, sample: true });
+    const c = checkLevels(s.platformKey, levels);
+    setResult({ ...s, levels, hwId, sample: true, check: c });
     setPlatformKey(s.platformKey);
     setIdea(s.idea);
     setError('');
@@ -57,6 +60,15 @@ export default function CodeConnect({ route }) {
     try { return await feedbackAndUpdate({ hardwareId: hwId, platformKey: result.platformKey, idea: result.idea || result.title, levelKey, currentBlocks, userIdea }); }
     catch (e) { setError(e.message || String(e)); return null; }
     finally { setBusyFb(false); }
+  };
+  const onRegenerateLevel = async (levelKey) => {
+    if (!result || result.sample) return;
+    setBusyLevel(levelKey); setError('');
+    try {
+      const { level, check } = await regenerateLevel({ hardwareId: hwId, platformKey: result.platformKey, idea: result.idea || result.title, extra, levelKey, result });
+      setResult((r) => ({ ...r, levels: { ...r.levels, [levelKey]: level }, check }));
+    } catch (e) { setError(e.message || String(e)); }
+    finally { setBusyLevel(null); }
   };
   const applyFeedback = (levelKey, blocks) => setResult((r) => ({ ...r, levels: { ...r.levels, [levelKey]: { ...r.levels[levelKey], blocks, issues: [] } } }));
 
@@ -148,6 +160,7 @@ export default function CodeConnect({ route }) {
         <ResultView
           hardware={HARDWARE_MAP[result.hwId]} platformKey={result.platformKey} result={result}
           onFeedback={result.sample ? undefined : onFeedback} onApplyFeedback={applyFeedback} busyFeedback={busyFb}
+          onRegenerateLevel={onRegenerateLevel} busyLevel={busyLevel}
           variantOptions={HARDWARE_MAP[result.hwId].variants} onSwapVariant={swapVariant}
         />
         </div>

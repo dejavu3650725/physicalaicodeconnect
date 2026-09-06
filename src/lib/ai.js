@@ -3,9 +3,11 @@
 //  - 카탈로그 기반 구조화 블록 트리 생성 → 정규화/검증 → (필요 시) 수정 재요청
 //  - 코드는 AI가 쓰지 않고 engine.compileTree 가 결정적으로 생성 (할루시네이션 원천 차단)
 // ============================================================
-import { catalogReference, normalizeTree, PLATFORMS } from '../blocks/engine.js';
+import { catalogReference, normalizeTree, PLATFORMS, countBlocks } from '../blocks/engine.js';
 import { HARDWARE_MAP } from '../data/hardware.js';
 import { designPrinciples } from './knowledge.js';
+import { SAMPLES } from '../data/samples.js';
+import { checkLevels, describeViolations } from './levelRules.js';
 
 const SAFETY_SETTINGS = [
   { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
@@ -129,10 +131,22 @@ ${catalogReference(platformKey, { includeAI })}`;
 }
 
 function levelGuide(hw, platformKey) {
-  const hasAI = PLATFORMS[platformKey].blocks.some((b) => b.aiOnly);
-  return `- basic(🌱 기초): 순차 구조 중심. 시작 블록 1개, 블록 5~9개. 센서 없이 움직임/출력만.
-- standard(🚀 기본): 반복 + 조건(센서 값 판단) 구조. 블록 8~16개. 변수 1개 이상 활용 권장.
-- advanced(🔥 심화): ${hasAI ? `인공지능 블록(카탈로그의 인공지능 카테고리)과 결합. 인식/분류 결과에 따라 분기. 블록 12~24개.` : `여러 센서 데이터 + 라디오/통신/변수를 결합한 융합 프로젝트. 블록 12~24개. 이 도구에는 AI 블록이 없으므로 AI 확장 방법(${hw.aiHow.split('.')[0]})은 explanation에 말로만 안내하고 블록은 카탈로그 안에서만 사용.`}`;
+  const hasAI = PLATFORMS[platformKey].blocks.some((b) => b.aiOnly || b.cat === 'ai');
+  return `세 단계는 **반드시 서로 다른 난이도**여야 하며 시스템이 아래 규칙을 자동 검사합니다(위반 시 재작성 요청).
+- basic(🌱 기초): 순차 구조. 시작 블록 1개, 블록 5~9개. **조건(만일) 블록 금지, 인공지능 블록 금지.** 센서 없이 움직임·출력·소리·짧은 반복만.
+- standard(🚀 기본): **센서 값 블록 1개 이상 + 조건 블록 1개 이상 + 반복 구조.** 변수 1개 이상 권장. 블록 8~16개(기초보다 많아야 함). 인공지능 블록 금지.
+- advanced(🔥 심화): ${hasAI ? '**인공지능 블록 1개 이상**(인식/분류 시작 + 결과 판단) + 조건 분기.' : `AI 블록이 없는 도구이므로 **두 가지 이상의 센서 또는 변수·통신을 결합**한 융합 프로젝트. AI 확장 방법(${hw.aiHow.split('.')[0]})은 explanation에 말로만 안내.`} 블록 12~24개(기본보다 많아야 함). 기본 단계의 구조를 확장하는 방식으로 연결감 있게.`;
+}
+
+/** 검증된 예시 구조를 few-shot으로 제공 — 같은 플랫폼의 내장 샘플 */
+function fewShot(hw, platformKey) {
+  const s = SAMPLES[hw.id];
+  if (!s || s.platformKey !== platformKey) return '';
+  const pick = (k) => JSON.stringify(s.levels[k].blocks);
+  return `# 참고: 검증된 3단계 예시 (아이디어 "${s.idea}") — 구조와 난이도 차이를 참고하되 내용은 학생 아이디어에 맞게 새로 설계
+basic: ${pick('basic')}
+standard: ${pick('standard')}
+advanced: ${pick('advanced')}`;
 }
 
 // ---------- 설계 생성 ----------
@@ -168,6 +182,7 @@ export async function designProject({ hardwareId, platformKey, idea, extra }) {
 }
 # 단계 가이드
 ${levelGuide(hw, platformKey)}
+${fewShot(hw, platformKey)}
 # lessonPlan 은 위 '수업 설계 원리'의 4단계 흐름·알고리즘 패턴·평가 관점을 이 프로젝트에 맞게 구체화한 것이어야 합니다(학교자율시간 4~6차시 기준).`;
   const raw = await callGemini({ system, prompt, temperature: 0.7, maxOutputTokens: 12000 });
   return finalize(platformKey, raw, { system, idea });
@@ -183,27 +198,77 @@ async function finalize(platformKey, raw, ctx) {
     allIssues.push(...issues.map((i) => ({ ...i, level: key })));
     result.levels[key] = { ...lv, blocks: tree, issues };
   }
-  // 알 수 없는 블록이 있으면 1회 수정 요청 (프롬프트 체이닝)
+  // 1) 카탈로그 밖 블록  2) 단계 규칙 위반  → 사유를 구체적으로 적어 1회 수정 요청
   const unknown = allIssues.filter((i) => i.kind === 'unknown_block' || i.kind === 'unknown_value');
-  if (unknown.length && ctx?.system) {
+  let check = checkLevels(platformKey, result.levels);
+  if ((unknown.length || !check.ok) && ctx?.system) {
     try {
-      const fixPrompt = `이전 설계에서 카탈로그에 없는 블록이 사용되었습니다: ${[...new Set(unknown.map((u) => u.type))].join(', ')}.
-프로젝트 "${ctx.idea}"의 세 단계(basic/standard/advanced) blocks 를 카탈로그에 있는 블록만 사용해 다시 작성하세요. 나머지 필드는 동일하게 유지하세요. 이전 설계(참고):\n${JSON.stringify(raw).slice(0, 6000)}\n같은 JSON 형식으로만 응답하세요.`;
-      const fixed = await callGemini({ system: ctx.system, prompt: fixPrompt, temperature: 0.4 });
+      const reasons = [];
+      if (unknown.length) reasons.push(`- 카탈로그에 없는 블록 사용: ${[...new Set(unknown.map((u) => u.type))].join(', ')} → 카탈로그의 블록으로 대체`);
+      if (!check.ok) reasons.push(describeViolations(check));
+      const fixPrompt = `이전 설계를 검사한 결과 다음 문제가 있습니다:
+${reasons.join('\n')}
+
+프로젝트 "${ctx.idea}"의 세 단계(basic/standard/advanced) blocks 를 위 문제를 모두 해결하도록 다시 작성하세요. 문제가 없는 단계는 그대로 두어도 됩니다. goal/explanation/ctConcepts/tryThis 는 바뀐 블록에 맞게 다듬고, 나머지 필드(title, summary, lessonPlan 등)는 동일하게 유지하세요.
+이전 설계(참고):\n${JSON.stringify(raw).slice(0, 7000)}\n같은 JSON 형식으로만 응답하세요.`;
+      const fixed = await callGemini({ system: ctx.system, prompt: fixPrompt, temperature: 0.4, maxOutputTokens: 12000 });
+      const cand = { ...result.levels };
       for (const key of ['basic', 'standard', 'advanced']) {
         const lv = fixed.levels?.[key];
         if (!lv?.blocks) continue;
         const issues = [];
         const tree = normalizeTree(platformKey, lv.blocks, issues);
-        if (issues.filter((i) => i.kind === 'unknown_block').length <= (result.levels[key].issues || []).filter((i) => i.kind === 'unknown_block').length) {
-          result.levels[key] = { ...result.levels[key], ...lv, blocks: tree, issues, repaired: true };
-        }
+        cand[key] = { ...result.levels[key], ...lv, blocks: tree, issues, repaired: true };
       }
+      const check2 = checkLevels(platformKey, cand);
+      const unk = (lvls) => Object.values(lvls).reduce((n, l) => n + (l.issues || []).filter((i) => i.kind === 'unknown_block').length, 0);
+      // 규칙 위반과 미지 블록이 모두 늘지 않았을 때만 수정본 채택
+      if (check2.hardCount <= check.hardCount && unk(cand) <= unk(result.levels)) { result.levels = cand; check = check2; result.repaired = true; }
     } catch (e) { console.warn('수정 재요청 실패', e); }
   }
   result.issues = allIssues;
+  result.check = serializeCheck(check);
   return result;
 }
+
+function serializeCheck(check) {
+  const o = { ok: check.ok, hardCount: check.hardCount };
+  for (const k of ['basic', 'standard', 'advanced']) o[k] = { ok: check[k].ok, hard: check[k].hard, soft: check[k].soft, profile: { ...check[k].profile } };
+  return o;
+}
+
+/** 단계 하나만 다시 설계 — 다른 단계는 유지, 규칙 위반 시 1회 재요청 */
+export async function regenerateLevel({ hardwareId, platformKey, idea, extra, levelKey, result }) {
+  const hw = HARDWARE_MAP[hardwareId];
+  const system = systemPrompt(hw, platformKey, { includeAI: true });
+  const name = { basic: '기초(basic)', standard: '기본(standard)', advanced: '심화(advanced)' }[levelKey];
+  const others = ['basic', 'standard', 'advanced'].filter((k) => k !== levelKey);
+  const prev = result.levels[levelKey];
+  const violations = result.check?.[levelKey]?.hard || [];
+  const ask = (note) => `프로젝트 "${result.title}" (아이디어: "${idea}")${extra ? `\n학급 조건: ${extra}` : ''}
+${name} 단계만 새로 설계합니다. 다른 두 단계는 그대로 유지되므로 이들과 난이도가 뚜렷히 구분되어야 합니다.
+${others.map((k) => `${k} (유지, 블록 ${countBlocksSafe(result.levels[k].blocks)}개): ${JSON.stringify(result.levels[k].blocks).slice(0, 2500)}`).join('\n')}
+이전 ${name} 설계: ${JSON.stringify(prev.blocks).slice(0, 3000)}
+${violations.length ? `이전 설계의 문제: ${violations.join(' / ')}` : '이전과 다른 접근으로, 더 교육적으로 좋은 구성을 제안하세요.'}
+${note || ''}
+# 단계 가이드
+${levelGuide(hw, platformKey)}
+JSON 형식으로만 응답: {"goal":"...","blocks":[...],"explanation":"...","ctConcepts":[...],"tryThis":"..."}`;
+  const build = (raw) => { const issues = []; const tree = normalizeTree(platformKey, raw.blocks || [], issues); return { ...prev, ...raw, blocks: tree, issues, repaired: true }; };
+  let lv = build(await callGemini({ system, prompt: ask(), temperature: 0.8 }));
+  let levels = { ...result.levels, [levelKey]: lv };
+  let check = checkLevels(platformKey, levels);
+  if (!check[levelKey].ok) {
+    try {
+      const lv2 = build(await callGemini({ system, prompt: ask(`다시 검사한 결과 문제가 남아 있습니다: ${check[levelKey].hard.join(' / ')} — 반드시 해결하세요.`), temperature: 0.5 }));
+      const levels2 = { ...result.levels, [levelKey]: lv2 };
+      const check2 = checkLevels(platformKey, levels2);
+      if (check2[levelKey].hard.length <= check[levelKey].hard.length) { lv = lv2; levels = levels2; check = check2; }
+    } catch (e) { console.warn('단계 재요청 실패', e); }
+  }
+  return { level: lv, check: serializeCheck(check) };
+}
+const countBlocksSafe = (b) => { try { return countBlocks(b); } catch { return 0; } };
 
 // ---------- 피드백 + 아이디어 반영 업데이트 ----------
 export async function feedbackAndUpdate({ hardwareId, platformKey, idea, levelKey, currentBlocks, userIdea }) {

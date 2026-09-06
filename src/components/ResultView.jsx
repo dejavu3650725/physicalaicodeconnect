@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Layers, Code2, ListOrdered, Settings2, Sparkles, Lightbulb, Send, CheckCircle2, AlertTriangle, Wand2, BookOpen, Globe2, ArrowRightLeft, Printer } from 'lucide-react';
+import { Layers, Code2, ListOrdered, Settings2, Sparkles, Lightbulb, Send, CheckCircle2, AlertTriangle, Wand2, BookOpen, Globe2, ArrowRightLeft, Printer, RefreshCw, ShieldCheck } from 'lucide-react';
 import BlockCanvas from './BlockCanvas.jsx';
 import CodePanel from './CodePanel.jsx';
 import { blockCaption, countBlocks, getBlockDef, PLATFORMS } from '../blocks/engine.js';
@@ -22,7 +22,7 @@ function linearize(platformKey, blocks, depth = 0, out = []) {
   return out;
 }
 
-export default function ResultView({ hardware, platformKey, result, onFeedback, onApplyFeedback, onSwapVariant, variantOptions, busyFeedback }) {
+export default function ResultView({ hardware, platformKey, result, onFeedback, onApplyFeedback, onSwapVariant, variantOptions, busyFeedback, onRegenerateLevel, busyLevel }) {
   const [level, setLevel] = useState('standard');
   const [view, setView] = useState('block');
   const [userIdea, setUserIdea] = useState('');
@@ -31,6 +31,8 @@ export default function ResultView({ hardware, platformKey, result, onFeedback, 
   const lv = result.levels[level] || result.levels.basic;
   const steps = useMemo(() => linearize(platformKey, lv.blocks), [platformKey, lv.blocks]);
   const unknown = (lv.issues || []).filter((i) => i.kind === 'unknown_block' || i.kind === 'unknown_value');
+  const check = result.check?.[level];
+  const L = LEVELS.find((l) => l.key === level);
 
   const askFeedback = async () => {
     if (!userIdea.trim() || !onFeedback) return;
@@ -71,7 +73,7 @@ export default function ResultView({ hardware, platformKey, result, onFeedback, 
                     : { borderColor: L.color + '55', background: `linear-gradient(135deg, ${L.soft}, #fff 75%)` }}>
                   <div className="flex items-center justify-between gap-2">
                     <span className="flex items-center gap-1.5 text-[11px] font-black" style={{ color: on ? 'rgba(255,255,255,.9)' : L.color }}><span className="w-5 h-5 rounded-full grid place-items-center text-[10px] font-black" style={{ background: on ? '#fff' : L.color, color: on ? L.color : '#fff' }}>{i + 1}</span>STEP {i + 1}</span>
-                    <span className="text-[11px] font-bold hidden sm:inline" style={{ color: on ? 'rgba(255,255,255,.85)' : '#64748b' }}>{n} 블록</span>
+                    <span className="text-[11px] font-bold hidden sm:inline-flex items-center gap-1" style={{ color: on ? 'rgba(255,255,255,.85)' : '#64748b' }}>{result.check && (result.check[L.key]?.ok ? <ShieldCheck className="w-3.5 h-3.5" title="단계 규칙 통과" /> : <AlertTriangle className="w-3.5 h-3.5" title="단계 규칙 미충족" />)}{n} 블록</span>
                   </div>
                   <div className="mt-2 flex items-center gap-1.5 text-lg md:text-xl font-black" style={{ color: on ? '#fff' : '#0f172a' }}><span>{L.emoji}</span>{L.name}<span className="text-xs md:text-sm font-bold" style={{ color: on ? 'rgba(255,255,255,.85)' : L.color }}>· {L.sub}</span></div>
                   <p className="text-[12px] mt-1 leading-snug hidden md:block" style={{ color: on ? 'rgba(255,255,255,.85)' : '#64748b' }}>{L.desc}</p>
@@ -86,10 +88,28 @@ export default function ResultView({ hardware, platformKey, result, onFeedback, 
             <div><b className="text-amber-800">하드웨어 한계 돌파!</b> <span className="text-amber-900">"{result.edgeCase.wish}" → {result.edgeCase.workaround}</span></div>
           </div>
         )}
-        <div className="relative mt-3 flex flex-wrap items-center gap-2 text-sm rounded-xl px-4 py-2.5" style={{ background: LEVELS.find((l) => l.key === level)?.soft }}>
-          <span className="font-extrabold" style={{ color: LEVELS.find((l) => l.key === level)?.color }}>{LEVELS.find((l) => l.key === level)?.full} 목표</span>
-          <span className="text-slate-700">{lv.goal}</span>
-          <span className="ml-auto chip bg-white">{countBlocks(lv.blocks)} 블록</span>
+        <div className="relative mt-3 rounded-xl px-4 py-2.5 text-sm" style={{ background: L?.soft }}>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="font-extrabold" style={{ color: L?.color }}>{L?.full} 목표</span>
+            <span className="text-slate-700">{lv.goal}</span>
+            <span className="ml-auto flex items-center gap-2">
+              {check && (check.ok
+                ? <span className="chip bg-white text-emerald-700 border-emerald-200"><ShieldCheck className="w-3.5 h-3.5" /> 단계 규칙 통과</span>
+                : <span className="chip bg-white text-amber-700 border-amber-200"><AlertTriangle className="w-3.5 h-3.5" /> 규칙 미충족 {check.hard.length}</span>)}
+              <span className="chip bg-white">{countBlocks(lv.blocks)} 블록</span>
+              {onRegenerateLevel && !result.sample && (
+                <button onClick={() => onRegenerateLevel(level)} disabled={!!busyLevel} className="chip bg-white hover:bg-slate-100 disabled:opacity-60 no-print" title="이 단계만 다른 구성으로 다시 설계">
+                  <RefreshCw className={`w-3.5 h-3.5 ${busyLevel === level ? 'animate-spin' : ''}`} /> {busyLevel === level ? '다시 설계 중…' : '이 단계 다시 설계'}
+                </button>
+              )}
+            </span>
+          </div>
+          {check && (check.hard.length > 0 || check.soft.length > 0) && (
+            <ul className="mt-2 space-y-0.5 text-[12px] text-slate-600 no-print">
+              {check.hard.map((t, i) => <li key={'h' + i} className="flex gap-1.5"><AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0 mt-0.5" /><span>{t}</span></li>)}
+              {check.soft.map((t, i) => <li key={'s' + i} className="flex gap-1.5"><Lightbulb className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" /><span>{t}</span></li>)}
+            </ul>
+          )}
         </div>
       </div>
 
