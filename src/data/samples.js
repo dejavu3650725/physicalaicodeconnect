@@ -6,7 +6,7 @@ export const SAMPLES = {
   hamster: {
     platformKey: 'entry-hamster', idea: '장애물을 피하는 AI 배달 로봇',
     title: '똑똑 배달 햄스터', summary: '앞에 장애물이 있으면 피해 가고, 손 모양 신호를 보면 멈추는 배달 로봇을 만들어요.',
-    edgeCase: null, realWorld: '자율주행 배달 로봇(서빙 로봇)은 거리 센서로 장애물을 감지해 경로를 바꿉니다.', lessonLink: '교육청 자료 [중급] 엔트리 AI 햄스터 자동차 3차시(손 인식으로 제어)와 연결',
+    edgeCase: null, realWorld: '자율주행 배달 로봇(서빙 로봇)은 거리 센서로 장애물을 감지해 경로를 바꿉니다.', lessonLink: '',
     variables: [{ name: '위험거리', value: 40, desc: '근접 센서 값이 이보다 크면 장애물이 가까운 것으로 판단(0~255)' }, { name: '속도', value: 30, desc: '바퀴 속도(%). 너무 빠르면 회피가 늦어요' }],
     levels: {
       basic: { goal: '순서대로 움직이고 LED·소리로 배달 완료를 알려요.', ctConcepts: ['순차'], tryThis: '앞으로 가는 초를 2초로 바꾸고 거리가 어떻게 달라지는지 재 보세요.',
@@ -63,7 +63,7 @@ export const SAMPLES = {
   microbit: {
     platformKey: 'makecode-microbit', idea: '걸음 수를 세는 스마트워치(만보기)',
     title: '손목 위 만보기 워치', summary: '흔들림을 감지해 걸음을 세고, 목표를 달성하면 축하 멜로디가 나오는 스마트워치를 만들어요.',
-    edgeCase: null, realWorld: '스마트워치의 걸음 수 측정은 가속도 센서의 흔들림 패턴을 세는 원리예요.', lessonLink: '교육청 자료 [초급] 마이크로비트 센서 탐색(가속도) 활동과 연결',
+    edgeCase: null, realWorld: '스마트워치의 걸음 수 측정은 가속도 센서의 흔들림 패턴을 세는 원리예요.', lessonLink: '',
     variables: [{ name: 'steps', value: 0, desc: '걸음 수' }, { name: 'goal', value: 100, desc: '목표 걸음 수. 수업 시간엔 20으로 낮춰 테스트!' }],
     levels: {
       basic: { goal: '버튼으로 아이콘과 숫자를 출력해요.', ctConcepts: ['이벤트', '순차'], tryThis: 'B 버튼을 누르면 다른 아이콘이 나오게 바꿔 보세요.',
@@ -127,7 +127,7 @@ export const SAMPLES = {
   spike: {
     platformKey: 'spike-prime', idea: '쓰레기를 인식해 분류하는 수거 로봇',
     title: '분류왕 수거 로봇', summary: '검은 선을 따라 이동하고 색을 구분해 멈추며, AI 모델의 분류 결과로 로봇팔을 움직이는 수거 로봇이에요.',
-    edgeCase: null, realWorld: '재활용 선별장에서는 카메라 AI가 페트병·캔을 인식해 자동으로 분류해요.', lessonLink: '교육청 자료 [중급] 레고 스파이크 프라임 사회문제 해결 프로젝트(쓰레기 수거) 2~3차시와 연결',
+    edgeCase: null, realWorld: '재활용 선별장에서는 카메라 AI가 페트병·캔을 인식해 자동으로 분류해요.', lessonLink: '',
     variables: [{ name: '속도', value: 50, desc: '동작 속도(%)' }],
     levels: {
       basic: { goal: '드라이빙 베이스를 순서대로 움직여요.', ctConcepts: ['순차'], tryThis: '10cm를 20cm로 바꾸고 실제 거리를 재 보세요. 바퀴 둘레가 왜 중요할까요?',

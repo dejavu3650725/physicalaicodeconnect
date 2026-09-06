@@ -1,19 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { Bot, Home as HomeIcon, Cpu, Plug, BookOpen, Puzzle, KeyRound, X, Menu } from 'lucide-react';
+import { Bot, Home as HomeIcon, Cpu, Plug, Compass, KeyRound, X, Menu } from 'lucide-react';
 import { useRoute, href } from './lib/router.js';
 import Home from './pages/Home.jsx';
 import CodeConnect from './pages/CodeConnect.jsx';
 import Tutorial from './pages/Tutorial.jsx';
-import Library from './pages/Library.jsx';
-import Unplugged from './pages/Unplugged.jsx';
+import Guide from './pages/Guide.jsx';
 import { aiMode, getLocalApiKey, setLocalApiKey, fetchModelStatus } from './lib/ai.js';
 
 const NAV = [
   { to: '/', label: '홈', icon: HomeIcon },
   { to: '/connect', label: '코드 커넥트', icon: Cpu },
   { to: '/tutorial', label: '연결 튜토리얼', icon: Plug },
-  { to: '/library', label: '교육청 자료실', icon: BookOpen },
-  { to: '/unplugged', label: '언플러그드', icon: Puzzle },
+  { to: '/guide', label: '수업 설계 가이드', icon: Compass },
 ];
 
 function SettingsModal({ onClose }) {
@@ -52,13 +50,12 @@ export default function App() {
   let page;
   if (route.segs[0] === 'connect') page = <CodeConnect route={route} />;
   else if (route.segs[0] === 'tutorial') page = <Tutorial route={route} />;
-  else if (route.segs[0] === 'library') page = <Library route={route} />;
-  else if (route.segs[0] === 'unplugged') page = <Unplugged route={route} />;
+  else if (route.segs[0] === 'guide') page = <Guide route={route} />;
   else page = <Home route={route} />;
 
   return (
     <div className="min-h-screen">
-      <nav className="sticky top-0 z-40 bg-white/85 backdrop-blur border-b border-slate-200/80">
+      <nav className="sticky top-0 z-40 glass border-b border-white/60 shadow-[0_8px_30px_-20px_rgba(11,18,32,.3)]">
         <div className="max-w-7xl mx-auto px-4 h-16 flex items-center gap-4">
           <a href="#/" className="flex items-center gap-2.5 shrink-0" translate="no">
             <span className="bg-gradient-to-tr from-[#76b900] to-[#22c55e] p-2 rounded-xl shadow-lg shadow-lime-500/30"><Bot className="w-5 h-5 text-white" /></span>
@@ -68,7 +65,7 @@ export default function App() {
             {NAV.map((n) => { const I = n.icon; return <a key={n.to} href={href(n.to)} className={`px-3.5 py-2 rounded-xl text-sm font-bold flex items-center gap-1.5 transition whitespace-nowrap ${active(n.to) ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}><I className="w-4 h-4" />{n.label}</a>; })}
           </div>
           <div className="ml-auto flex items-center gap-2">
-            <span className="hidden xl:inline text-[11px] font-bold text-slate-400 tracking-wide whitespace-nowrap">서울시교육청 AI·피지컬컴퓨팅융합교육연구회</span>
+            <span className="hidden xl:inline text-[11px] font-bold text-slate-400 tracking-wide whitespace-nowrap">서울특별시교육청 AI피지컬컴퓨팅융합교육연구회</span>
             <button onClick={() => setShowSettings(true)} className="btn btn-ghost !py-2 !px-3 text-xs whitespace-nowrap" title="AI 연결 설정"><KeyRound className="w-4 h-4" /><span className="hidden sm:inline">AI 설정</span></button>
             <div className="md:hidden"><button className="btn btn-ghost !py-2 !px-2.5" onClick={() => setMenu(!menu)}><Menu className="w-5 h-5" /></button></div>
           </div>
@@ -77,9 +74,9 @@ export default function App() {
       </nav>
       <main className="max-w-7xl mx-auto px-4 py-8 md:py-10">{page}</main>
       <footer className="max-w-7xl mx-auto px-4 pb-10 pt-6 text-xs text-slate-400 font-medium flex flex-wrap gap-x-4 gap-y-1 border-t border-slate-200 mt-8">
-        <span>피지컬 AI 코드 커넥트 v2 · 서울특별시교육청 AI정보교육연구회(AI·피지컬컴퓨팅융합교육연구회)</span>
-        <span>교육 자료 출처: 서울특별시교육청 『피지컬 AI 원리를 활용한 문제해결 프로젝트 자료집』, 『놀이로 경험하는 디지털 세상 언플러그드 학습가이드 지도자료』</span>
-        <span>블록 명칭 출처: 엔트리(entryjs) · MakeCode(makecode.microbit.org) · SPIKE 앱 공식 화면</span>
+        <span className="font-extrabold text-slate-500">피지컬 AI 코드 커넥트 · 서울특별시교육청 AI피지컬컴퓨팅융합교육연구회</span>
+        <span>설계 원리: 서울특별시교육청 피지컬 AI 교육자료의 교수학습 설계 구조를 내부 지식으로 활용</span>
+        <span>블록 명칭: 엔트리(entryjs) · MakeCode(makecode.microbit.org) · SPIKE 앱 공식 화면</span>
       </footer>
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </div>

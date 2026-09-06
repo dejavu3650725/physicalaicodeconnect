@@ -4,6 +4,8 @@ import BlockCanvas from './BlockCanvas.jsx';
 import CodePanel from './CodePanel.jsx';
 import { blockCaption, countBlocks, getBlockDef, PLATFORMS } from '../blocks/engine.js';
 import { LEVELS } from '../data/hardware.js';
+import { STAGES, hintsFor, warmupFor, ALGORITHM_PATTERN, ROLES } from '../lib/knowledge.js';
+import { Route, ShieldAlert, ClipboardCheck, Puzzle, Users, Clock } from 'lucide-react';
 
 function Rich({ text }) {
   if (!text) return null;
@@ -47,14 +49,12 @@ export default function ResultView({ hardware, platformKey, result, onFeedback, 
             <div className="flex items-center gap-2 mb-2 flex-wrap">
               <span className="chip" style={{ background: hardware.color + '22', borderColor: hardware.color + '55', color: '#0f172a' }}>{hardware.emoji} {hardware.name}</span>
               <span className="chip">{PLATFORMS[platformKey].tool}</span>
-              {result.lessonLink ? <span className="chip bg-violet-50 border-violet-200 text-violet-700"><BookOpen className="w-3.5 h-3.5" /> 교육청 자료 연계</span> : null}
               {variantOptions?.length > 1 && (
                 <button onClick={onSwapVariant} className="chip hover:bg-slate-200 transition" title="햄스터 ↔ 햄스터S 블록으로 다시 설계"><ArrowRightLeft className="w-3.5 h-3.5" /> {variantOptions.find((v) => v.key === platformKey)?.label} 전환</button>
               )}
             </div>
             <h2 className="text-2xl md:text-3xl font-black tracking-tight">“{result.title}”</h2>
             <p className="text-slate-600 mt-2 font-medium leading-relaxed">{result.summary}</p>
-            {result.lessonLink ? <p className="text-violet-700 text-sm mt-2 font-semibold">📚 {result.lessonLink}</p> : null}
           </div>
           <div className="seg shrink-0 self-start">
             {LEVELS.map((L) => (
@@ -130,6 +130,9 @@ export default function ResultView({ hardware, platformKey, result, onFeedback, 
         </div>
       </div>
 
+      {/* 수업 흐름 — 교육청 피지컬 AI 설계 원리 기반 */}
+      <LessonPlan hardware={hardware} level={level} plan={result.lessonPlan} />
+
       {/* 피드백 */}
       {onFeedback && (
         <div className="card overflow-hidden">
@@ -165,6 +168,45 @@ export default function ResultView({ hardware, platformKey, result, onFeedback, 
           </div>
         </div>
       )}
+    </section>
+  );
+}
+
+
+function LessonPlan({ hardware, level, plan }) {
+  const hints = hintsFor(hardware.id);
+  const warm = warmupFor(hardware.id, level);
+  const stages = (plan?.stages?.length ? plan.stages : STAGES.map((s) => ({ key: s.key, title: s.name, minutes: s.key === 'making' ? 80 : 40, activities: [s.desc], teacherTip: '' }))).map((st) => ({ ...st, meta: STAGES.find((x) => x.key === st.key) || STAGES[1] }));
+  const total = stages.reduce((a, s) => a + (Number(s.minutes) || 0), 0);
+  return (
+    <section className="card overflow-hidden">
+      <div className="p-6 md:p-7 border-b border-slate-100 flex flex-wrap items-start gap-4 justify-between">
+        <div>
+          <span className="eyebrow">Lesson Flow</span>
+          <h3 className="text-2xl font-black tracking-tight mt-1 flex items-center gap-2"><Route className="w-6 h-6 text-violet-500" /> 학교자율시간 수업 흐름</h3>
+          <p className="text-sm text-slate-500 mt-1">교육청 피지컬 AI 교육자료의 교수학습 설계 구조(4단계 · 센서→AI→판단→출력)를 이 프로젝트에 맞게 구체화했습니다.</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <span className="chip"><Clock className="w-3.5 h-3.5" /> 총 {total}분 · {Math.round(total / 40)}차시</span>
+          <span className="chip"><Users className="w-3.5 h-3.5" /> 3인 1모둠 · {ROLES.length}역할</span>
+        </div>
+      </div>
+      <div className="p-6 md:p-7 grid lg:grid-cols-4 gap-4">
+        {stages.map((st, i) => (
+          <div key={i} className="rounded-3xl border border-slate-200 bg-gradient-to-b from-slate-50 to-white p-5 flex flex-col">
+            <div className="flex items-center gap-3"><span className="step-num">{i + 1}</span><div><div className="font-black text-slate-800 leading-tight">{st.meta.name}</div><div className="text-[11px] font-bold text-violet-600">{st.meta.en} · {st.minutes}분</div></div></div>
+            <h4 className="font-extrabold mt-4 text-slate-900">{st.title}</h4>
+            <ul className="mt-2 space-y-1.5 text-sm text-slate-700 flex-1">{(st.activities || []).map((a, j) => <li key={j} className="flex gap-2"><span className="text-violet-500 font-black">▸</span><span>{a}</span></li>)}</ul>
+            {st.teacherTip ? <p className="mt-3 text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-xl p-2.5">💡 {st.teacherTip}</p> : null}
+          </div>
+        ))}
+      </div>
+      <div className="px-6 md:px-7 pb-7 grid md:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="rounded-2xl bg-fuchsia-50 border border-fuchsia-100 p-4 text-sm"><b className="text-fuchsia-800 flex items-center gap-1.5"><Puzzle className="w-4 h-4" /> 언플러그드 도입 · {warm.title}</b><p className="text-slate-700 mt-1.5 leading-relaxed">{warm.summary}</p></div>
+        <div className="rounded-2xl bg-sky-50 border border-sky-100 p-4 text-sm"><b className="text-sky-800 flex items-center gap-1.5"><Route className="w-4 h-4" /> 알고리즘 흐름</b><ul className="mt-1.5 space-y-1 text-slate-700">{(plan?.algorithmFlow?.length ? plan.algorithmFlow : ALGORITHM_PATTERN).map((a, i) => <li key={i}>{a}</li>)}</ul></div>
+        <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-4 text-sm"><b className="text-emerald-800 flex items-center gap-1.5"><ClipboardCheck className="w-4 h-4" /> 평가 관점</b><ul className="mt-1.5 space-y-1 text-slate-700">{(plan?.assessment?.length ? plan.assessment : hints.assessment).slice(0, 5).map((a, i) => <li key={i}>• {a}</li>)}</ul></div>
+        <div className="rounded-2xl bg-rose-50 border border-rose-100 p-4 text-sm"><b className="text-rose-800 flex items-center gap-1.5"><ShieldAlert className="w-4 h-4" /> 안전 지도</b><ul className="mt-1.5 space-y-1 text-slate-700">{(plan?.safety?.length ? plan.safety : hints.safety.length ? hints.safety : ['교구 충전·전원 상태 확인', '활동 공간 정리 및 안전 거리 확보']).slice(0, 5).map((a, i) => <li key={i}>• {a}</li>)}</ul>{(plan?.extensions?.length ? plan.extensions : hints.extensions).length ? <p className="mt-2 text-xs text-slate-500"><b>확장</b> · {(plan?.extensions?.length ? plan.extensions : hints.extensions).slice(0, 2).join(' / ')}</p> : null}</div>
+      </div>
     </section>
   );
 }

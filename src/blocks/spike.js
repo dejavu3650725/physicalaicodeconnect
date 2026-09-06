@@ -1,6 +1,6 @@
 // ============================================================
 // 레고 스파이크 프라임 — SPIKE 앱(3.x) 워드 블록 카탈로그 + SPIKE Python
-// 캡션은 서울시교육청 자료집(레고 스파이크 프라임 챕터)에 실린 화면 표기를 따른다.
+// 캡션은 SPIKE 앱 3.x 한국어 화면 표기를 따른다.
 // code.py : SPIKE Python 3 (hub / motor_pair / motor / color_sensor / distance_sensor / runloop)
 // ============================================================
 
@@ -118,7 +118,7 @@ export const SPIKE_BLOCKS = [
   { id: 'change_variable', cat: 'variables', shape: 'stack', tpl: '%VAR 을(를) %V 만큼 바꾸기', params: { VAR: { kind: 'variable', def: '점수' }, V: { kind: 'value', def: 1 } }, code: { py: '${VAR} += ${V}' } },
   { id: 'get_variable', cat: 'variables', shape: 'value', tpl: '%VAR', params: { VAR: { kind: 'variable', def: '점수' } }, code: { py: '${VAR}' } },
 
-  // ---- AI 이거다 (교육청 자료집 방식: 카메라 AI 모델 분류 확장) ----
+  // ---- AI 이거다 (PC 카메라 AI 모델 분류 확장) ----
   { id: 'ai_request_result', cat: 'ai', shape: 'stack', tpl: '%MODEL 분류 결과 요청하기', params: { MODEL: { kind: 'text', def: '로봇조종' } }, aiOnly: true,
     code: { py: '# [AI 이거다] ${MODEL} 모델 분류 결과 요청 (SPIKE 앱 확장 블록 전용)' } },
   { id: 'ai_result_is', cat: 'ai', shape: 'boolean', tpl: '%MODEL 분류 결과가 클래스 %CLS 인가?', params: { MODEL: { kind: 'text', def: '로봇조종' }, CLS: { kind: 'text', def: 'go' } }, aiOnly: true,

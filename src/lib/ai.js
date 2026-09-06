@@ -5,6 +5,7 @@
 // ============================================================
 import { catalogReference, normalizeTree, PLATFORMS } from '../blocks/engine.js';
 import { HARDWARE_MAP } from '../data/hardware.js';
+import { designPrinciples } from './knowledge.js';
 
 const SAFETY_SETTINGS = [
   { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
@@ -104,7 +105,7 @@ function parseJSON(raw) {
 function systemPrompt(hw, platformKey, { includeAI }) {
   const plat = PLATFORMS[platformKey];
   const variant = hw.variants.find((v) => v.key === platformKey);
-  return `당신은 서울시교육청 AI·피지컬컴퓨팅 융합교육연구회의 베테랑 초등 교사이자 피지컬 컴퓨팅 전문가 '선생님'입니다.
+  return `당신은 서울특별시교육청 AI피지컬컴퓨팅융합교육연구회의 베테랑 초등 교사이자 피지컬 컴퓨팅 전문가 '선생님'입니다.
 학생의 아이디어를 실제 교구 **${hw.name}(${variant?.label})** 로 구현하는 ${plat.tool} 블록 프로그램을 설계합니다.
 
 # 절대 규칙
@@ -121,6 +122,8 @@ function systemPrompt(hw, platformKey, { includeAI }) {
 5. 초등학생 눈높이의 친절하고 유머러스한 구어체로 설명합니다. 존재하지 않는 기능을 있다고 말하지 않습니다.
 ${includeAI ? `6. 심화 단계에서는 AI 융합 방법을 사용합니다: ${hw.aiHow}` : '6. 인공지능 블록은 사용하지 않습니다.'}
 
+${designPrinciples(hw.id)}
+
 # 블록 카탈로그 (${plat.tool} / ${variant?.label})
 ${catalogReference(platformKey, { includeAI })}`;
 }
@@ -133,17 +136,11 @@ function levelGuide(hw, platformKey) {
 }
 
 // ---------- 설계 생성 ----------
-export async function designProject({ hardwareId, platformKey, idea, curriculum, extra }) {
+export async function designProject({ hardwareId, platformKey, idea, extra }) {
   const hw = HARDWARE_MAP[hardwareId];
   const system = systemPrompt(hw, platformKey, { includeAI: true });
-  const curriculumCtx = curriculum ? `\n# 연결할 교육청 자료(서울시교육청 『피지컬 AI 원리를 활용한 문제해결 프로젝트』)
-- 챕터: [${curriculum.level}] ${curriculum.title} (${curriculum.subtitle || ''})
-- 학습 목표: ${(curriculum.goals || []).join(' / ')}
-- 알고리즘 흐름: ${(curriculum.algorithm || []).map((a) => `${a.step} ${a.process}: ${a.detail}`).join(' → ')}
-- 자료에 나온 핵심 블록: ${(curriculum.keyBlocks || []).slice(0, 25).join(' | ')}
-이 자료의 알고리즘 흐름과 학습 목표에 부합하도록 설계하고, lessonLink 필드에 어느 단계/차시와 연결되는지 한 문장으로 적으세요.\n` : '';
-  const prompt = `학생의 프로젝트 아이디어: "${idea}"${extra ? `\n추가 조건: ${extra}` : ''}
-${curriculumCtx}
+  const prompt = `학생의 프로젝트 아이디어: "${idea}"${extra ? `\n학급 조건: ${extra}` : ''}
+
 아래 JSON 형식으로만 응답하세요.
 {
   "title": "프로젝트 제목(재치 있게, 15자 이내)",
@@ -156,11 +153,23 @@ ${curriculumCtx}
   },
   "variables": [{"name":"변수명","value":30,"desc":"무엇을 조절하는지"}],
   "realWorld": "이 원리가 쓰이는 실생활 예 한 문장",
-  "lessonLink": "교육청 자료와의 연결(없으면 빈 문자열)"
+  "lessonPlan": {
+    "stages": [
+      {"key":"tinkering","title":"차시 제목","minutes":40,"activities":["활동1","활동2","활동3"],"teacherTip":"교사 유의점 한 문장"},
+      {"key":"making","title":"...","minutes":80,"activities":[...],"teacherTip":"..."},
+      {"key":"sharing","title":"...","minutes":40,"activities":[...],"teacherTip":"..."},
+      {"key":"improving","title":"...","minutes":40,"activities":[...],"teacherTip":"..."}
+    ],
+    "algorithmFlow": ["① 센서 입력: ...", "② AI 인식: ...", "③ 판단: ...", "④ 출력: ..."],
+    "assessment": ["평가 관점 1(관찰/자기/동료 중 표기)", "..."],
+    "safety": ["안전 지도 1", "..."],
+    "extensions": ["확장 아이디어 1", "..."]
+  }
 }
 # 단계 가이드
-${levelGuide(hw, platformKey)}`;
-  const raw = await callGemini({ system, prompt, temperature: 0.7 });
+${levelGuide(hw, platformKey)}
+# lessonPlan 은 위 '수업 설계 원리'의 4단계 흐름·알고리즘 패턴·평가 관점을 이 프로젝트에 맞게 구체화한 것이어야 합니다(학교자율시간 4~6차시 기준).`;
+  const raw = await callGemini({ system, prompt, temperature: 0.7, maxOutputTokens: 12000 });
   return finalize(platformKey, raw, { system, idea });
 }
 
@@ -219,38 +228,4 @@ JSON 형식:
   const issues = [];
   const tree = normalizeTree(platformKey, raw.blocks || [], issues);
   return { ...raw, blocks: tree, issues };
-}
-
-// ---------- 교육청 자료 기반 수업(차시) 설계 ----------
-export async function designLessonFromCurriculum({ hardwareId, platformKey, chapter, classContext }) {
-  const hw = HARDWARE_MAP[hardwareId];
-  const system = systemPrompt(hw, platformKey, { includeAI: true });
-  const prompt = `서울시교육청 배포 자료 『피지컬 AI 원리를 활용한 문제해결 프로젝트』의 다음 챕터를 우리 학급(학교자율시간)에 맞게 재구성하려 합니다.
-챕터: [${chapter.level}] ${chapter.title} — ${chapter.subtitle || ''}
-설계 의도: ${(chapter.designIntent || []).join(' / ')}
-학습 목표: ${(chapter.goals || []).join(' / ')}
-차시 흐름: ${(chapter.sessions || []).map((s) => `${s.no}차시 ${s.stage}: ${(s.contents || []).map((c) => c.title).join(', ')}`).join(' | ')}
-알고리즘 흐름: ${(chapter.algorithm || []).map((a) => `${a.step} ${a.process}(${a.example || ''})`).join(' → ')}
-학급 상황/요청: ${classContext || '특별한 조건 없음'}
-
-이 챕터의 최종 산출물(로봇 프로그램)을 우리가 사용하는 교구 **${hw.name}** 와 ${PLATFORMS[platformKey].tool} 로 구현한 '완성 예시 프로그램'과, 교사용 수업 흐름 재구성안을 만들어 주세요.
-JSON:
-{
-  "title": "재구성 수업 제목",
-  "summary": "한 문장 요약",
-  "sessionPlan": [{"no":"1","title":"차시 제목","activities":["활동1","활동2"],"assessment":"평가 관점 한 문장"}],
-  "levels": {
-    "basic": {"goal":"...","blocks":[...],"explanation":"...","ctConcepts":[...],"tryThis":"..."},
-    "standard": {"goal":"...","blocks":[...],"explanation":"...","ctConcepts":[...],"tryThis":"..."},
-    "advanced": {"goal":"...","blocks":[...],"explanation":"...","ctConcepts":[...],"tryThis":"..."}
-  },
-  "variables": [{"name":"...","value":0,"desc":"..."}],
-  "realWorld": "...",
-  "lessonLink": "원 자료의 어느 차시/단계를 어떻게 바꾼 것인지 한 문장",
-  "edgeCase": null
-}
-# 단계 가이드
-${levelGuide(hw, platformKey)}`;
-  const raw = await callGemini({ system, prompt, temperature: 0.6, maxOutputTokens: 12000 });
-  return finalize(platformKey, raw, { system, idea: chapter.title });
 }

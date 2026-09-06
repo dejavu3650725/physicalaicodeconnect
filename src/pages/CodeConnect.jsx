@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Bot, Sparkles, BookOpen, Plug, AlertTriangle, Eye, ChevronDown, Info } from 'lucide-react';
+import { Bot, Sparkles, Plug, AlertTriangle, Eye, Info, LayoutTemplate } from 'lucide-react';
 import { HARDWARE, HARDWARE_MAP } from '../data/hardware.js';
-import { CURRICULUM } from '../data/curriculumIndex.js';
+import { TEMPLATES } from '../lib/knowledge.js';
 import { SAMPLES } from '../data/samples.js';
 import { designProject, feedbackAndUpdate, aiMode } from '../lib/ai.js';
 import { normalizeTree } from '../blocks/engine.js';
@@ -16,7 +16,6 @@ export default function CodeConnect({ route }) {
   const hw = HARDWARE_MAP[hwId];
   const [platformKey, setPlatformKey] = useState(hw.defaultPlatform);
   const [idea, setIdea] = useState(route.query.idea || '');
-  const [chapterId, setChapterId] = useState(route.query.chapter || '');
   const [extra, setExtra] = useState('');
   const [busy, setBusy] = useState(false);
   const [busyFb, setBusyFb] = useState(false);
@@ -27,16 +26,14 @@ export default function CodeConnect({ route }) {
 
   useEffect(() => { setPlatformKey(HARDWARE_MAP[hwId].defaultPlatform); }, [hwId]);
   useEffect(() => { if (!busy) return; const t = setInterval(() => setMsgIdx((i) => (i + 1) % LOADING_MSGS.length), 1400); return () => clearInterval(t); }, [busy]);
-  useEffect(() => { if (route.query.hw && HARDWARE_MAP[route.query.hw]) setHwId(route.query.hw); if (route.query.chapter) setChapterId(route.query.chapter); }, [route.query.hw, route.query.chapter]);
-
-  const chapters = useMemo(() => CURRICULUM.filter((c) => c.hardware === hwId), [hwId]);
-  const chapter = CURRICULUM.find((c) => c.id === chapterId && c.hardware === hwId) || null;
+  useEffect(() => { if (route.query.hw && HARDWARE_MAP[route.query.hw]) setHwId(route.query.hw); if (route.query.idea) setIdea(route.query.idea); }, [route.query.hw, route.query.idea]);
+  const templates = useMemo(() => TEMPLATES[hwId] || [], [hwId]);
 
   const generate = async () => {
     if (!idea.trim()) return;
     setBusy(true); setError(''); setResult(null);
     try {
-      const r = await designProject({ hardwareId: hwId, platformKey, idea: idea.trim(), curriculum: chapter, extra });
+      const r = await designProject({ hardwareId: hwId, platformKey, idea: idea.trim(), extra });
       setResult({ ...r, platformKey, hwId, idea: idea.trim() });
     } catch (e) { setError(e.message || String(e)); }
     finally { setBusy(false); }
@@ -67,7 +64,7 @@ export default function CodeConnect({ route }) {
     setPlatformKey(other.key);
     if (result.sample) return;
     setBusy(true);
-    try { const r = await designProject({ hardwareId: hwId, platformKey: other.key, idea: result.idea, curriculum: chapter, extra }); setResult({ ...r, platformKey: other.key, hwId, idea: result.idea }); }
+    try { const r = await designProject({ hardwareId: hwId, platformKey: other.key, idea: result.idea, extra }); setResult({ ...r, platformKey: other.key, hwId, idea: result.idea }); }
     catch (e) { setError(e.message || String(e)); } finally { setBusy(false); }
   };
 
@@ -78,7 +75,7 @@ export default function CodeConnect({ route }) {
       {/* 하드웨어 선택 */}
       <section className="flex gap-3 overflow-x-auto scrollbar-thin pb-1 no-print">
         {HARDWARE.map((h) => (
-          <button key={h.id} onClick={() => { setHwId(h.id); setChapterId(''); }} className={`shrink-0 flex items-center gap-3 rounded-2xl px-4 py-3 border-2 transition text-left ${hwId === h.id ? 'border-slate-900 bg-slate-900 text-white shadow-lg' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
+          <button key={h.id} onClick={() => setHwId(h.id)} className={`shrink-0 flex items-center gap-3 rounded-2xl px-4 py-3 border-2 transition text-left ${hwId === h.id ? 'border-slate-900 bg-slate-900 text-white shadow-lg' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
             <span className="text-2xl">{h.emoji}</span>
             <span><span className="block font-extrabold text-sm leading-tight">{h.name}</span><span className={`block text-[11px] font-bold ${hwId === h.id ? 'text-slate-300' : 'text-slate-400'}`}>{h.tool}</span></span>
           </button>
@@ -98,23 +95,21 @@ export default function CodeConnect({ route }) {
             <div className="flex flex-wrap gap-2">
               {hw.ideas.map((s) => <button key={s} onClick={() => setIdea(s)} className="chip hover:bg-slate-200 transition cursor-pointer">{s}</button>)}
             </div>
+            {templates.length > 0 && (
+              <div className="rounded-2xl border border-violet-200 bg-violet-50/70 p-3">
+                <div className="text-[11px] font-black text-violet-700 flex items-center gap-1 mb-2"><LayoutTemplate className="w-3.5 h-3.5" /> 연구회 추천 프로젝트 템플릿 — 교육청 피지컬 AI 설계 원리 반영</div>
+                <div className="flex flex-wrap gap-2">
+                  {templates.map((t) => <button key={t.id} onClick={() => setIdea(t.idea)} className="text-left rounded-xl bg-white border border-violet-200 hover:border-violet-400 px-3 py-2 transition"><div className="text-sm font-extrabold text-slate-800">{t.name}</div><div className="text-[11px] text-slate-500">{t.tags.join(' · ')}</div></button>)}
+                </div>
+              </div>
+            )}
             <div className="flex flex-wrap gap-3 items-center pt-1">
               {hw.variants.length > 1 && (
                 <div className="seg">{hw.variants.map((v) => <button key={v.key} className={platformKey === v.key ? 'on' : ''} onClick={() => setPlatformKey(v.key)}>{v.label}</button>)}</div>
               )}
-              {chapters.length > 0 && (
-                <div className="relative">
-                  <select value={chapterId} onChange={(e) => setChapterId(e.target.value)} className="appearance-none input !py-2.5 !pr-9 text-sm font-bold bg-violet-50 border-violet-200 text-violet-900 !w-auto max-w-[22rem]">
-                    <option value="">📚 교육청 자료 연계 없이 설계</option>
-                    {chapters.map((c) => <option key={c.id} value={c.id}>[{c.level}] {c.title}</option>)}
-                  </select>
-                  <ChevronDown className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-violet-600 pointer-events-none" />
-                </div>
-              )}
               <button onClick={() => setShowAdv(!showAdv)} className="text-xs font-bold text-slate-500 underline">학급 조건 추가 {showAdv ? '▲' : '▼'}</button>
             </div>
             {showAdv && <input className="input text-sm" value={extra} onChange={(e) => setExtra(e.target.value)} placeholder="예: 4학년, 2인 1조, 40분 2차시, 센서는 근접 센서만 사용, 변수 이름은 한글로" />}
-            {chapter && <div className="text-xs bg-violet-50 border border-violet-200 text-violet-800 rounded-xl px-3 py-2 flex gap-2"><BookOpen className="w-4 h-4 shrink-0" /><span>연계 자료: <b>[{chapter.level}] {chapter.title}</b> — {chapter.goals?.[0]} · <a className="underline" href={href('/library/' + chapter.id)}>자료 보기</a></span></div>}
           </div>
           <aside className="rounded-2xl bg-slate-50 border border-slate-200 p-4 text-sm space-y-3">
             <div className="flex items-center justify-between"><b className="text-slate-800">{hw.emoji} {hw.name} 사양 카드</b><a href={href('/tutorial/' + hw.tutorial)} className="chip hover:bg-slate-200"><Plug className="w-3.5 h-3.5" /> 연결 튜토리얼</a></div>
