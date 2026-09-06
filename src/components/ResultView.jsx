@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Layers, Code2, ListOrdered, Settings2, Sparkles, Lightbulb, Send, CheckCircle2, AlertTriangle, Wand2, BookOpen, Globe2, ArrowRightLeft, Printer, RefreshCw, ShieldCheck } from 'lucide-react';
 import BlockCanvas from './BlockCanvas.jsx';
 import CodePanel from './CodePanel.jsx';
+import ShareBar from './ShareBar.jsx';
 import { blockCaption, countBlocks, getBlockDef, PLATFORMS } from '../blocks/engine.js';
 import { LEVELS } from '../data/hardware.js';
 import { STAGES, hintsFor, warmupFor, ALGORITHM_PATTERN, ROLES } from '../lib/knowledge.js';
@@ -22,7 +23,7 @@ function linearize(platformKey, blocks, depth = 0, out = []) {
   return out;
 }
 
-export default function ResultView({ hardware, platformKey, result, onFeedback, onApplyFeedback, onSwapVariant, variantOptions, busyFeedback, onRegenerateLevel, busyLevel }) {
+export default function ResultView({ hardware, platformKey, result, onFeedback, onApplyFeedback, onSwapVariant, variantOptions, busyFeedback, onRegenerateLevel, busyLevel, readOnly = false }) {
   const [level, setLevel] = useState('standard');
   const [view, setView] = useState('block');
   const [userIdea, setUserIdea] = useState('');
@@ -97,7 +98,7 @@ export default function ResultView({ hardware, platformKey, result, onFeedback, 
                 ? <span className="chip bg-white text-emerald-700 border-emerald-200"><ShieldCheck className="w-3.5 h-3.5" /> 단계 규칙 통과</span>
                 : <span className="chip bg-white text-amber-700 border-amber-200"><AlertTriangle className="w-3.5 h-3.5" /> 규칙 미충족 {check.hard.length}</span>)}
               <span className="chip bg-white">{countBlocks(lv.blocks)} 블록</span>
-              {onRegenerateLevel && !result.sample && (
+              {onRegenerateLevel && !result.sample && !readOnly && (
                 <button onClick={() => onRegenerateLevel(level)} disabled={!!busyLevel} className="chip bg-white hover:bg-slate-100 disabled:opacity-60 no-print" title="이 단계만 다른 구성으로 다시 설계">
                   <RefreshCw className={`w-3.5 h-3.5 ${busyLevel === level ? 'animate-spin' : ''}`} /> {busyLevel === level ? '다시 설계 중…' : '이 단계 다시 설계'}
                 </button>
@@ -111,6 +112,7 @@ export default function ResultView({ hardware, platformKey, result, onFeedback, 
             </ul>
           )}
         </div>
+        {<div className="relative mt-4 pt-4 border-t border-slate-100"><ShareBar result={{ ...result, hwId: result.hwId || hardware.id, platformKey }} level={level} /></div>}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">

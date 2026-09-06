@@ -5,6 +5,7 @@ import Home from './pages/Home.jsx';
 import CodeConnect from './pages/CodeConnect.jsx';
 import Tutorial from './pages/Tutorial.jsx';
 import Guide from './pages/Guide.jsx';
+import View from './pages/View.jsx';
 import Footer from './components/Footer.jsx';
 
 const NAV = [
@@ -23,6 +24,7 @@ export default function App() {
   if (route.segs[0] === 'connect') page = <CodeConnect route={route} />;
   else if (route.segs[0] === 'tutorial') page = <Tutorial route={route} />;
   else if (route.segs[0] === 'guide') page = <Guide route={route} />;
+  else if (route.segs[0] === 'view') page = <View route={route} />;
   else page = <Home route={route} />;
 
   const linkCls = (n) => {
