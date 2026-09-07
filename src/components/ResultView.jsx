@@ -112,9 +112,8 @@ export default function ResultView({ hardware, platformKey, result, onFeedback, 
             </ul>
           )}
         </div>
+        <div className="relative mt-4 pt-3 border-t border-slate-100"><ShareBar result={{ ...result, hwId: result.hwId || hardware.id, platformKey }} level={level} /></div>
       </div>
-
-      <ShareBar result={{ ...result, hwId: result.hwId || hardware.id, platformKey }} level={level} />
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* 블록/코드 */}

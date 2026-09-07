@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link2, Check, Copy, Download, Printer, Share2, MessageCircle, Save, FolderOpen, LogIn } from 'lucide-react';
+import { Link2, Check, Copy, Download, Printer, Share2, MessageCircle, Save, FolderOpen, LogIn, X, ImageIcon } from 'lucide-react';
 import { encodeShare, shareUrl, copyText, renderCard, downloadBlob, copyBlob } from '../lib/share.js';
 import { isFirebaseEnabled, useAuth, signIn, saveDesign, shortShareUrl } from '../lib/firebase.js';
 import { href } from '../lib/router.js';
@@ -7,6 +7,7 @@ import { href } from '../lib/router.js';
 /** 공유 패널 — 카드 미리보기를 바로 보여주고, 링크·이미지·인쇄 버튼을 큼직하게 */
 export default function ShareBar({ result, level }) {
   const [state, setState] = useState({});
+  const [open, setOpen] = useState(false);
   const fb = isFirebaseEnabled(); const { user } = useAuth();
   const [savedId, setSavedId] = useState(result.savedId || null);
   useEffect(() => { setSavedId(result.savedId || null); }, [result.title, result.savedId]);
@@ -24,10 +25,11 @@ export default function ShareBar({ result, level }) {
 
   // 결과·단계가 바뀔 때마다 카드를 미리 그려 둔다(사용자는 즉시 확인)
   useEffect(() => {
+    if (!open) return undefined;
     let alive = true; let url = '';
     renderCard(result, level).then((blob) => { if (!alive || !blob) return; url = URL.createObjectURL(blob); setCard({ url, blob }); }).catch((e) => console.warn('카드 생성 실패', e));
     return () => { alive = false; if (url) URL.revokeObjectURL(url); };
-  }, [result.title, result.platformKey, level, result.levels]);
+  }, [open, result.title, result.platformKey, level, result.levels]);
 
   const copyLink = async () => {
     setState((s) => ({ ...s, link: 'busy' }));
@@ -50,6 +52,13 @@ export default function ShareBar({ result, level }) {
     } catch (e) { if (e?.name !== 'AbortError') console.warn(e); }
   };
   const canNative = typeof navigator !== 'undefined' && !!navigator.share;
+  useEffect(() => { if (!open) return undefined; const onKey = (e) => e.key === 'Escape' && setOpen(false); window.addEventListener('keydown', onKey); return () => window.removeEventListener('keydown', onKey); }, [open]);
+
+  // 결과 헤더용 작은 칩 — 코드가 주인공, 공유는 조용히
+  const Chip = ({ k, icon: I, label, onClick, strong }) => {
+    const st = state[k]; const busy = st === 'busy'; const done = st && !busy;
+    return <button onClick={onClick} disabled={busy} className="chip hover:brightness-105 disabled:opacity-60" style={strong ? { background: '#0b1220', color: '#fff', borderColor: 'transparent' } : { background: '#fff' }}>{done ? <Check className="w-3.5 h-3.5" style={{ color: strong ? '#a3e635' : '#10b981' }} /> : <I className="w-3.5 h-3.5" />}{done ? st : busy ? '…' : label}</button>;
+  };
 
   const Btn = ({ k, icon: I, label, sub, onClick, primary }) => {
     const st = state[k]; const done = st && st !== 'busy';
@@ -62,9 +71,10 @@ export default function ShareBar({ result, level }) {
     );
   };
 
-  return (
+  const panel = (
     <section className="rounded-[28px] bg-[#0b1220] text-white p-5 md:p-6 relative overflow-hidden no-print">
       <div className="aurora w-80 h-80 -right-24 -top-28" style={{ background: '#76b900', opacity: .3 }} />
+      <button onClick={() => setOpen(false)} className="absolute right-4 top-4 w-9 h-9 rounded-full grid place-items-center bg-white/10 hover:bg-white/20 z-10" aria-label="닫기"><X className="w-4 h-4" /></button>
       <div className="relative grid lg:grid-cols-[1.25fr_1fr] gap-5 items-center">
         <div>
           <div className="flex items-center gap-2 text-[11px] font-black tracking-widest text-lime-300 uppercase"><Share2 className="w-3.5 h-3.5" /> 공유 카드</div>
@@ -85,5 +95,23 @@ export default function ShareBar({ result, level }) {
         </div>
       </div>
     </section>
+  );
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-2 no-print">
+        <span className="text-[11px] font-black tracking-widest text-slate-400 uppercase mr-1">공유</span>
+        <Chip k="link" icon={Link2} label="링크 복사" onClick={copyLink} strong />
+        {fb && !result.sample && !savedId && <Chip k="save" icon={user ? Save : LogIn} label={user ? '내 설계에 저장' : '로그인 후 저장'} onClick={save} />}
+        {fb && savedId && <a href={href('/mine')} className="chip" style={{ background: '#ecfccb', color: '#3f6212', borderColor: '#d9f99d' }}><FolderOpen className="w-3.5 h-3.5" /> 저장됨 · 내 설계</a>}
+        <button onClick={() => setOpen(true)} className="chip hover:bg-slate-200"><ImageIcon className="w-3.5 h-3.5" /> 공유 카드 만들기</button>
+        <button onClick={() => window.print()} className="chip hover:bg-slate-200"><Printer className="w-3.5 h-3.5" /> 인쇄 · PDF</button>
+      </div>
+      {open && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-[#0b1220]/70 backdrop-blur-sm" onClick={() => setOpen(false)} role="dialog" aria-modal="true" aria-label="공유 카드">
+          <div className="w-full max-w-5xl max-h-[92vh] overflow-y-auto fade-up" onClick={(e) => e.stopPropagation()}>{panel}</div>
+        </div>
+      )}
+    </>
   );
 }
