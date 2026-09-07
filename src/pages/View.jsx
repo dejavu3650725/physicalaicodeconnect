@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Cpu, Sparkles, AlertTriangle, Share2 } from 'lucide-react';
 import { decodeShare } from '../lib/share.js';
+import { getDesign, isFirebaseEnabled } from '../lib/firebase.js';
 import { normalizeTree } from '../blocks/engine.js';
 import { checkLevels } from '../lib/levelRules.js';
 import { HARDWARE_MAP } from '../data/hardware.js';
@@ -14,15 +15,19 @@ export default function View({ route }) {
     let alive = true;
     (async () => {
       try {
-        const d = await decodeShare(route.query.d);
+        let d, savedId = null;
+        if (route.segs[0] === 'd' && route.segs[1]) {
+          if (!isFirebaseEnabled()) throw new Error('저장 기능이 설정되지 않은 배포입니다.');
+          const got = await getDesign(route.segs[1]); d = got.result; savedId = got.id;
+        } else d = await decodeShare(route.query.d);
         const levels = {};
         for (const k of Object.keys(d.levels)) { const issues = []; levels[k] = { ...d.levels[k], blocks: normalizeTree(d.platformKey, d.levels[k].blocks || [], issues), issues }; }
         const check = checkLevels(d.platformKey, levels);
-        if (alive) setState({ loading: false, result: { ...d, levels, check, shared: true } });
+        if (alive) setState({ loading: false, result: { ...d, levels, check, shared: true, savedId } });
       } catch (e) { if (alive) setState({ loading: false, error: e.message || String(e) }); }
     })();
     return () => { alive = false; };
-  }, [route.query.d]);
+  }, [route.query.d, route.segs[1]]);
 
   if (state.loading) return <div className="card p-10 text-center text-slate-500 font-bold">공유된 설계를 여는 중…</div>;
   if (state.error) return (

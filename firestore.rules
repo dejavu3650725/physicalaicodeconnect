@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 설계 저장소: 공개 문서는 누구나 읽기, 쓰기는 로그인한 본인만
+    match /designs/{id} {
+      allow read: if resource.data.public == true
+                  || (request.auth != null && request.auth.uid == resource.data.ownerUid);
+      allow create: if request.auth != null
+                    && request.resource.data.ownerUid == request.auth.uid
+                    && request.resource.data.data is string
+                    && request.resource.data.data.size() < 900000;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.ownerUid;
+    }
+
+    // 관리자 목록: 문서 존재 = 관리자. 콘솔에서만 편집
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // 연구회 프로그램(추후): 게시된 것은 누구나 읽기, 쓰기는 관리자만
+    match /programs/{id} {
+      allow read: if resource.data.published == true
+                  || (request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+      allow write: if request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+  }
+}

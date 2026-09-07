@@ -1,10 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { Link2, Check, Copy, Download, Printer, Share2, MessageCircle } from 'lucide-react';
+import { Link2, Check, Copy, Download, Printer, Share2, MessageCircle, Save, FolderOpen, LogIn } from 'lucide-react';
 import { encodeShare, shareUrl, copyText, renderCard, downloadBlob, copyBlob } from '../lib/share.js';
+import { isFirebaseEnabled, useAuth, signIn, saveDesign, shortShareUrl } from '../lib/firebase.js';
+import { href } from '../lib/router.js';
 
 /** 공유 패널 — 카드 미리보기를 바로 보여주고, 링크·이미지·인쇄 버튼을 큼직하게 */
 export default function ShareBar({ result, level }) {
   const [state, setState] = useState({});
+  const fb = isFirebaseEnabled(); const { user } = useAuth();
+  const [savedId, setSavedId] = useState(result.savedId || null);
+  useEffect(() => { setSavedId(result.savedId || null); }, [result.title, result.savedId]);
+  const getUrl = async () => (savedId ? shortShareUrl(savedId) : shareUrl(await encodeShare(result)));
+  const save = async () => {
+    setState((s) => ({ ...s, save: 'busy' }));
+    try {
+      if (!user) await signIn();
+      const id = await saveDesign(result); setSavedId(id);
+      flash('save', '저장됨! 짧은 링크 사용 가능');
+    } catch (e) { flash('save', e?.code === 'auth/popup-closed-by-user' ? '로그인 취소' : '저장 실패'); console.warn(e); }
+  };
   const [card, setCard] = useState({ url: '', blob: null });
   const flash = (k, v) => { setState((s) => ({ ...s, [k]: v })); setTimeout(() => setState((s) => ({ ...s, [k]: null })), 2400); };
 
@@ -18,7 +32,7 @@ export default function ShareBar({ result, level }) {
   const copyLink = async () => {
     setState((s) => ({ ...s, link: 'busy' }));
     try {
-      const code = await encodeShare(result); const url = shareUrl(code);
+      const url = await getUrl();
       const ok = await copyText(url);
       flash('link', ok ? '링크 복사됨!' : '복사 실패');
       if (!ok) window.prompt('아래 링크를 복사하세요', url);
@@ -29,7 +43,7 @@ export default function ShareBar({ result, level }) {
   const copyCard = async () => { try { const ok = await copyBlob(await getBlob()); flash('cardCopy', ok ? '복사됨! 카톡에 붙여넣기' : '이 브라우저는 미지원 → 저장 이용'); } catch (e) { flash('cardCopy', '실패'); console.warn(e); } };
   const shareNative = async () => {
     try {
-      const code = await encodeShare(result); const url = shareUrl(code);
+      const url = await getUrl();
       const blob = await getBlob(); const file = blob ? new File([blob], 'code-connect.png', { type: 'image/png' }) : null;
       const data = { title: `피지컬 AI 코드 커넥트 — ${result.title}`, text: `“${result.title}” 설계를 확인해 보세요`, url };
       if (file && navigator.canShare?.({ files: [file] })) await navigator.share({ ...data, files: [file] }); else await navigator.share(data);
@@ -61,7 +75,9 @@ export default function ShareBar({ result, level }) {
           </div>
         </div>
         <div className="grid gap-2.5">
-          <Btn k="link" icon={Link2} label="링크 복사" sub="설계 전체가 담긴 링크 · 받은 사람은 바로 열림" onClick={copyLink} primary />
+          <Btn k="link" icon={Link2} label="링크 복사" sub={savedId ? '짧은 링크 · 받은 사람은 바로 열림' : '설계 전체가 담긴 링크 · 받은 사람은 바로 열림'} onClick={copyLink} primary />
+          {fb && !result.sample && !savedId && <Btn k="save" icon={user ? Save : LogIn} label={user ? '내 설계에 저장' : '구글 로그인 후 저장'} sub="저장하면 짧은 링크가 생기고 '내 설계'에서 다시 열 수 있어요" onClick={save} />}
+          {fb && savedId && <a href={href('/mine')} className="flex items-center gap-3 rounded-2xl px-4 py-3 text-left transition hover:-translate-y-0.5 w-full" style={{ background: 'rgba(163,230,53,.12)', color: '#fff', border: '1px solid rgba(163,230,53,.35)' }}><span className="w-9 h-9 rounded-xl grid place-items-center shrink-0 bg-lime-400/20"><FolderOpen className="w-5 h-5 text-lime-300" /></span><span><span className="block font-black leading-tight">저장됨 · 내 설계 보기</span><span className="block text-[11px] font-semibold opacity-75 mt-0.5">{shortShareUrl(savedId).replace(/^https?:\/\//, '')}</span></span></a>}
           <Btn k="card" icon={Download} label="카드 이미지 저장" sub="PNG 1200×630 · 카톡·게시판용" onClick={saveCard} />
           <Btn k="cardCopy" icon={Copy} label="카드 이미지 복사" sub="클립보드에 복사 → 카톡 창에 Ctrl+V" onClick={copyCard} />
           {canNative && <Btn k="native" icon={MessageCircle} label="공유하기…" sub="카카오톡 등 앱으로 바로 보내기(모바일)" onClick={shareNative} />}
