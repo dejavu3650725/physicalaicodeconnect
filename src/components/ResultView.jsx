@@ -5,6 +5,8 @@ import CodePanel from './CodePanel.jsx';
 import ShareBar from './ShareBar.jsx';
 import { blockCaption, countBlocks, getBlockDef, PLATFORMS } from '../blocks/engine.js';
 import { LEVELS } from '../data/hardware.js';
+import { toGroundTest, GROUND_LEGEND } from '../lib/groundTest.js';
+import { normalizeTree } from '../blocks/engine.js';
 import { STAGES, hintsFor, warmupFor, ALGORITHM_PATTERN, ROLES } from '../lib/knowledge.js';
 import { Route, ShieldAlert, ClipboardCheck, Puzzle, Users, Clock } from 'lucide-react';
 
@@ -30,7 +32,11 @@ export default function ResultView({ hardware, platformKey, result, onFeedback, 
   const [fb, setFb] = useState(null);
   const [fbView, setFbView] = useState('block');
   const lv = result.levels[level] || result.levels.basic;
-  const steps = useMemo(() => linearize(platformKey, lv.blocks), [platformKey, lv.blocks]);
+  const [ground, setGround] = useState(false);
+  const isDrone = platformKey === 'entry-tory';
+  const groundData = useMemo(() => (isDrone ? (() => { const g = toGroundTest(lv.blocks); return { ...g, blocks: normalizeTree(platformKey, g.blocks, []) }; })() : null), [isDrone, platformKey, lv.blocks]);
+  const shown = ground && groundData ? groundData.blocks : lv.blocks;
+  const steps = useMemo(() => linearize(platformKey, shown), [platformKey, shown]);
   const unknown = (lv.issues || []).filter((i) => i.kind === 'unknown_block' || i.kind === 'unknown_value');
   const check = result.check?.[level];
   const L = LEVELS.find((l) => l.key === level);
@@ -126,10 +132,19 @@ export default function ResultView({ hardware, platformKey, result, onFeedback, 
               <button className={view === 'code' ? 'on' : ''} onClick={() => setView('code')}><Code2 className="w-4 h-4 inline -mt-0.5" /> 텍스트 코드</button>
             </div>
           </div>
+          {isDrone && (
+            <div className={`mb-3 rounded-2xl border p-3 text-sm no-print ${ground ? 'border-emerald-300 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
+              <div className="flex flex-wrap items-center gap-2">
+                <button onClick={() => setGround(!ground)} className="chip" style={ground ? { background: '#059669', color: '#fff', borderColor: 'transparent' } : { background: '#fff' }}>🛬 {ground ? '지상 테스트 버전 보는 중' : '지상 테스트 버전 보기'}</button>
+                <span className="text-xs text-slate-600">{ground ? `비행 블록 ${groundData.replaced}개를 LED·부저 신호로 바꿨어요. 드론을 바닥에 둔 채 실행해 논리를 먼저 확인하세요(배터리 5분 아끼기).` : '비행 전에 바닥에서 LED·소리로 논리를 확인하는 버전. 배터리(5~6분)를 아끼고 안전해요.'}</span>
+              </div>
+              {ground && <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-600">{GROUND_LEGEND.map(([a, b]) => <span key={a}><b className="text-slate-800">{a}</b> → {b}</span>)}</div>}
+            </div>
+          )}
           {unknown.length > 0 && (
             <div className="mb-3 text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 rounded-xl px-3 py-2 flex gap-2"><AlertTriangle className="w-4 h-4 shrink-0" /> 실제 {PLATFORMS[platformKey].tool}에 없는 블록 {unknown.length}개를 자동으로 제외했습니다: {[...new Set(unknown.map((u) => u.type))].join(', ')}</div>
           )}
-          {view === 'block' && <BlockCanvas key={level} platformKey={platformKey} blocks={lv.blocks} />}
+          {view === 'block' && <BlockCanvas key={level + (ground ? '-g' : '')} platformKey={platformKey} blocks={shown} />}
           {view === 'steps' && (
             <ol className="space-y-1.5">
               {steps.map((s, i) => (
@@ -141,7 +156,7 @@ export default function ResultView({ hardware, platformKey, result, onFeedback, 
               ))}
             </ol>
           )}
-          {view === 'code' && <CodePanel key={level} platformKey={platformKey} blocks={lv.blocks} />}
+          {view === 'code' && <CodePanel key={level + (ground ? '-g' : '')} platformKey={platformKey} blocks={shown} />}
           <div className="mt-4 text-xs text-slate-500 flex items-center gap-2 no-print"><Printer className="w-4 h-4" /> 블록 조립도는 브라우저 인쇄(Ctrl+P)로 학생 활동지처럼 출력할 수 있어요.</div>
         </div>
 

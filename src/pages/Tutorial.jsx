@@ -145,6 +145,12 @@ function Runner({ tut }) {
           </div>
         </div>
       )}
+      {tut.tips && (
+        <section className="card p-6 md:p-7 border-amber-200 bg-gradient-to-br from-amber-50 to-white">
+          <h3 className="text-lg font-black">{tut.tips.title}</h3>
+          <ul className="mt-3 grid md:grid-cols-2 gap-x-6 gap-y-2">{tut.tips.items.map((t, i) => <li key={i} className="text-sm leading-relaxed text-slate-700 flex gap-2"><span className="text-amber-500 font-black shrink-0">✓</span><span><Rich text={t} /></span></li>)}</ul>
+        </section>
+      )}
     </div>
   );
 }
